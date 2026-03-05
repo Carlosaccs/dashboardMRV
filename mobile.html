@@ -1,1 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard MRV SP - Mobile v4.0</title>
+    <style>
+        /* Base Mobile */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body, html { height: 100vh; width: 100vw; overflow: hidden; background: #fff; display: flex; }
+        
+        #aviso-rotacao {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgb(6, 94, 3); color: white; z-index: 9999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+        @media (orientation: portrait) { #aviso-rotacao { display: flex; } }
 
+        /* Sidebar Lateral Estreita (Verde) */
+        .sidebar-titulo {
+            background: rgb(6, 94, 3); width: 40px; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            padding: 15px 0; color: white; flex-shrink: 0; cursor: pointer;
+        }
+        .titulo-vertical {
+            writing-mode: vertical-rl; transform: rotate(180deg);
+            text-transform: uppercase; font-size: 0.65rem; font-weight: bold;
+            letter-spacing: 1.2px; white-space: nowrap;
+        }
+
+        .main-wrapper { display: flex; flex: 1; height: 100vh; overflow: hidden; }
+
+        /* Lista da Esquerda */
+        .col-lista { width: 30%; background: #f8f9fa; overflow-y: auto; padding: 5px; border-right: 1px solid #ddd; }
+        
+        /* Títulos de Grupo (Tipo N) */
+        .item-grupo { 
+            background: #444; color: #fff; padding: 4px; font-size: 0.5rem; 
+            text-align: center; margin: 8px 0 4px; border-radius: 2px; 
+            text-transform: uppercase; font-weight: bold; 
+        }
+
+        .btRes { 
+            width: 100%; padding: 6px 4px; margin-bottom: 3px; background: #fff; 
+            border: none; border-left: 3px solid rgb(6, 94, 3); 
+            text-align: left; font-size: 0.55rem; border-radius: 2px;
+            display: flex; flex-direction: column;
+        }
+        .btRes strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+        .btRes.tipo-L { border-left-color: #007bff; background: #f0f7ff; }
+        .btRes.ativo { border-left-color: #ff8c00 !important; background: #fff5e6 !important; font-weight: bold; }
+
+        /* Centro (Mapa) */
+        .col-central { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; overflow: hidden; }
+        .centro-topo { height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.6rem; border-bottom: 1px solid #eee; background: #fdfdfd; }
+        .container-mapas { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        .caixa-troca { width: 100%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .pos-cima { height: 75%; transform: scale(1.1); }
+        .pos-baixo { height: 25%; cursor: pointer; transform: scale(0.9); opacity: 0.8; border-top: 1px solid #eee; }
+
+        svg { width: 100%; height: 100%; }
+        path { fill: #d1d1d1; stroke: #fff; stroke-width: 0.6; }
+        .commrv { fill: rgb(6, 94, 3) !important; }
+        .path-ativo { fill: #ff8c00 !important; stroke: #000 !important; stroke-width: 1.2; }
+
+        /* Direita (Ficha Técnica) */
+        .col-ficha { width: 35%; background: #fff; padding: 6px; overflow-y: auto; border-left: 1px solid #ddd; }
+        .ficha-card { border-left: 3px solid #ff8c00; padding: 5px; background: #fafafa; border-radius: 4px; }
+        .ficha-header { font-size: 0.65rem; color: #065e03; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
+        .bairro-destaque { font-size: 0.55rem; color: #444; font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+        .grid-item { font-size: 0.5rem; line-height: 1.1; background: #fff; padding: 3px; border: 1px solid #eee; }
+        .grid-label { font-weight: bold; color: #888; font-size: 0.4rem; text-transform: uppercase; }
+
+        /* Links e Badges */
+        .btn-mini { display: block; width: 100%; text-align: center; padding: 5px 0; background: #065e03; color: white; text-decoration: none; border-radius: 3px; font-size: 0.5rem; margin-bottom: 3px; font-weight: bold; }
+        .badge-estoque { font-size: 0.45rem; font-weight: bold; }
+        .estoque-L { color: #007bff; }
+        .estoque-R { color: #666; }
+
+        #toast { visibility: hidden; min-width: 120px; background: #333; color: #fff; text-align: center; border-radius: 4px; padding: 8px; position: fixed; z-index: 1000; left: 50%; bottom: 20px; transform: translateX(-50%); font-size: 0.6rem; }
+        #toast.show { visibility: visible; }
+    </style>
+</head>
+<body>
+
+    <div id="aviso-rotacao">
+        <div style="font-size: 40px; margin-bottom: 15px;">🔄</div>
+        <h2>Gire o dispositivo</h2>
+        <p>Dashboard otimizado para o modo horizontal.</p>
+    </div>
+
+    <div class="sidebar-titulo" onclick="toggleFullScreen()">
+        <span style="font-size:12px">⛶</span>
+        <div class="titulo-vertical">RESIDENCIAIS MRV EM SP</div>
+        <span style="font-size:12px">⛶</span>
+    </div>
+
+    <div class="main-wrapper">
+        <aside class="col-lista" id="lista-imoveis"></aside>
+        
+        <main class="col-central">
+            <div class="centro-topo" id="display-nome">Selecione uma região</div>
+            <div class="container-mapas" id="container-mapas">
+                <div id="caixa-a" class="caixa-troca pos-cima"></div>
+                <div id="caixa-b" class="caixa-troca pos-baixo"></div>
+            </div>
+        </main>
+
+        <aside class="col-ficha" id="ficha-tecnica">
+            <div style="text-align: center; color: #999; margin-top: 30px; font-size: 0.5rem;">Toque em uma cidade verde no mapa.</div>
+        </aside>
+    </div>
+
+    <div id="toast">Copiado!</div>
+
+    <script src="mrv-data.js"></script>
+    <script src="mrv-engine.js"></script>
+    <script>
+        // Função para gerar a lista Mobile com suporte a Grupos (N)
+        function gerarListaLateral() {
+            const list = document.getElementById('lista-imoveis');
+            list.innerHTML = "";
+            DADOS_PLANILHA.forEach(item => {
+                if (item.tipo === 'N') {
+                    const div = document.createElement('div');
+                    div.className = 'item-grupo';
+                    div.innerText = item.nome;
+                    list.appendChild(div);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = `btRes tipo-${item.tipo}`;
+                    btn.id = `btn-mob-${item.nome.replace(/\s+/g, '-')}`;
+                    btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                    btn.onclick = (e) => { e.stopPropagation(); selecionarResidencial(item, btn); };
+                    list.appendChild(btn);
+                }
+            });
+            desenharIniciais();
+        }
+
+        // Função de seleção integrada com o Bairro
+        function selecionarResidencial(item, btn) {
+            document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+            if(btn) btn.classList.add('ativo');
+
+            // Destaca no Mapa
+            const path = document.getElementById(item.id_path);
+            if(path) destacarNoMapa(path);
+
+            // Monta Ficha
+            document.getElementById('ficha-tecnica').innerHTML = `
+                <div class="ficha-card">
+                    <div class="ficha-header">${item.nome}</div>
+                    <span class="bairro-destaque">📍 ${item.bairro}</span>
+                    <div class="ficha-grid">
+                        <div class="grid-item"><div class="grid-label">Preço</div>${item.preco}</div>
+                        <div class="grid-item"><div class="grid-label">Entrega</div>${item.entrega}</div>
+                        <div class="grid-item"><div class="grid-label">Plantas</div>${item.plantas}</div>
+                        <div class="grid-item"><div class="grid-label">Obra</div>${item.obra}%</div>
+                    </div>
+                    ${item.dica ? `<div style="font-size:0.45rem; background:#fff5e6; padding:4px; border-radius:3px; margin-bottom:5px;"><strong>Dica:</strong> ${item.dica}</div>` : ''}
+                    <a href="${item.links.bookCli}" target="_blank" class="btn-mini">📄 Book Cliente</a>
+                    <a href="${item.links.vid1}" target="_blank" class="btn-mini" style="background:#ff8c00">🎥 Vídeo</a>
+                </div>
+            `;
+        }
+
+        function destacarNoMapa(el) {
+            if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
+            el.classList.add('path-ativo');
+            pathSelecionado = el;
+            document.getElementById('display-nome').innerText = el.getAttribute('name') || el.id;
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
+        window.onload = carregarPlanilha;
+    </script>
+</body>
+</html>
