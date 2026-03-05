@@ -3,43 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard MRV SP - Mobile</title>
+    <title>Dashboard MRV SP - Mobile v5.0</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Ajustes específicos para a experiência Mobile */
         body, html { height: 100vh; width: 100vw; overflow: hidden; display: flex; }
-        .sidebar-titulo { background: var(--mrv-verde); width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 0; color: white; }
-        .titulo-vertical { writing-mode: vertical-rl; transform: rotate(180deg); text-transform: uppercase; font-size: 0.65rem; font-weight: bold; }
-        .main-wrapper { display: flex; flex: 1; height: 100vh; overflow: hidden; }
-        .col-lista { width: 30%; background: var(--cinza-fundo); overflow-y: auto; padding: 5px; border-right: 1px solid var(--cinza-borda); }
-        .col-central { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .centro-topo { height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7rem; background: #fdfdfd; border-bottom: 1px solid #eee; }
-        .mapa-container { flex: 1; position: relative; }
-        .col-ficha { width: 35%; padding: 10px; overflow-y: auto; border-left: 1px solid var(--cinza-borda); }
         
-        .btRes { padding: 8px 5px; font-size: 0.6rem; }
-        .ficha-header { font-size: 0.7rem; color: var(--mrv-verde); font-weight: bold; margin-bottom: 5px; }
-        .ficha-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
-        .grid-item { font-size: 0.55rem; background: #f9f9f9; padding: 5px; border: 1px solid #eee; }
-        .btn-mini { display: block; width: 100%; text-align: center; padding: 8px 0; background: var(--mrv-verde); color: white; text-decoration: none; border-radius: 4px; font-size: 0.6rem; margin-top: 5px; font-weight: bold; }
+        /* Barra lateral fixa para o título */
+        .sidebar-titulo { 
+            background: var(--mrv-verde); 
+            width: 35px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 15px 0; 
+            color: white; 
+            flex-shrink: 0;
+        }
+        .titulo-vertical { 
+            writing-mode: vertical-rl; 
+            transform: rotate(180deg); 
+            text-transform: uppercase; 
+            font-size: 0.6rem; 
+            font-weight: bold; 
+            letter-spacing: 1px;
+        }
+
+        .main-wrapper { display: flex; flex: 1; height: 100vh; overflow: hidden; }
+
+        /* Coluna da Esquerda: Lista de Residenciais */
+        .col-lista { 
+            width: 28%; 
+            background: var(--cinza-fundo); 
+            overflow-y: auto; 
+            padding: 5px; 
+            border-right: 1px solid var(--cinza-borda); 
+            scroll-behavior: smooth;
+        }
+        
+        /* Ajuste de tamanho dos botões para telas pequenas */
+        .btRes { 
+            padding: 8px 4px; 
+            font-size: 0.55rem; 
+            min-height: 45px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .btRes strong { font-size: 0.55rem; line-height: 1.1; margin-bottom: 2px; }
+
+        /* Coluna Central: Mapa */
+        .col-central { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            background: #fff;
+        }
+        .centro-topo { 
+            height: 30px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 0.65rem; 
+            background: #fdfdfd; 
+            border-bottom: 1px solid #eee; 
+            text-align: center;
+        }
+        .mapa-container { flex: 1; position: relative; overflow: hidden; }
+
+        /* Coluna da Direita: Ficha Técnica */
+        .col-ficha { 
+            width: 35%; 
+            padding: 8px; 
+            overflow-y: auto; 
+            border-left: 1px solid var(--cinza-borda); 
+            background: #fff;
+        }
+        
+        .ficha-header { font-size: 0.7rem; color: var(--mrv-verde); font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
+        .bairro-info { font-size: 0.55rem; color: #666; margin-bottom: 8px; display: block; }
+        
+        .ficha-grid { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .grid-item { 
+            font-size: 0.55rem; 
+            background: #f9f9f9; 
+            padding: 5px; 
+            border: 1px solid #eee; 
+            border-radius: 3px;
+        }
+        .grid-item strong { color: #888; font-size: 0.45rem; text-transform: uppercase; display: block; }
+
+        .btn-mini { 
+            display: block; 
+            width: 100%; 
+            text-align: center; 
+            padding: 10px 0; 
+            background: var(--mrv-verde); 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            font-size: 0.6rem; 
+            margin-top: 5px; 
+            font-weight: bold; 
+        }
+
+        /* Aviso de rotação para mobile */
+        #aviso-orientacao {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--mrv-verde); color: white; z-index: 10000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+        @media (orientation: portrait) { #aviso-orientacao { display: flex; } }
     </style>
 </head>
 <body>
 
+    <div id="aviso-orientacao">
+        <div style="font-size: 40px; margin-bottom: 15px;">🔄</div>
+        <h2>Gire o celular</h2>
+        <p>Use o dashboard na horizontal para uma melhor visualização dos mapas.</p>
+    </div>
+
     <div class="sidebar-titulo">
-        <span>⛶</span>
+        <span style="font-size: 10px;">☰</span>
         <div class="titulo-vertical">DASHBOARD MRV SP</div>
-        <span>⛶</span>
+        <span style="font-size: 10px;">©</span>
     </div>
 
     <div class="main-wrapper">
         <aside class="col-lista" id="lista-imoveis"></aside>
         
         <main class="col-central">
-            <div class="centro-topo" id="display-nome">Selecione uma região</div>
+            <div class="centro-topo" id="display-nome">Selecione uma cidade</div>
             <div class="mapa-container" id="caixa-a"></div>
         </main>
 
-        <aside class="col-ficha" id="ficha-tecnica"></aside>
+        <aside class="col-ficha" id="ficha-tecnica">
+            <div style="text-align: center; color: #ccc; margin-top: 40%; font-size: 0.6rem;">Toque em um ponto no mapa ou na lista lateral.</div>
+        </aside>
     </div>
 
     <div id="toast">Copiado!</div>
@@ -47,6 +151,7 @@
     <script src="mrv-data.js"></script>
     <script src="mrv-engine.js"></script>
     <script>
+        // Versão Mobile da lista lateral
         function gerarListaLateral() {
             const list = document.getElementById('lista-imoveis');
             list.innerHTML = "";
@@ -59,6 +164,8 @@
                 } else {
                     const btn = document.createElement('button');
                     btn.className = `btRes tipo-${item.tipo}`;
+                    // ID exato para o motor encontrar o botão via clique no mapa
+                    btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
                     btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
                     btn.onclick = () => selecionar(item, btn);
                     list.appendChild(btn);
@@ -67,29 +174,38 @@
             desenharIniciais();
         }
 
+        // Função de seleção adaptada para Mobile
         function selecionar(item, btn) {
+            // 1. Limpa seleções anteriores na lista
             document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-            btn.classList.add('ativo');
             
+            // 2. Destaca o botão atual e faz scroll automático até ele
+            if(btn) {
+                btn.classList.add('ativo');
+                btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // 3. Destaca no Mapa (via motor engine)
             const path = document.getElementById(item.id_path);
-            if(path) {
-                if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-                path.classList.add('path-ativo');
-                pathSelecionado = path;
-                document.getElementById('display-nome').innerText = path.getAttribute('name');
+            if(path && typeof destacarNoMapa === 'function') {
+                destacarNoMapa(path);
             }
 
+            // 4. Preenche a Ficha Técnica
             document.getElementById('ficha-tecnica').innerHTML = `
                 <div class="ficha-header">${item.nome}</div>
-                <div style="font-size: 0.55rem; margin-bottom: 8px;">📍 ${item.bairro}</div>
+                <span class="bairro-info">📍 ${item.bairro}</span>
                 <div class="ficha-grid">
                     <div class="grid-item"><strong>Preço:</strong> ${item.preco}</div>
                     <div class="grid-item"><strong>Entrega:</strong> ${item.entrega}</div>
+                    <div class="grid-item"><strong>Status:</strong> ${item.obra}% de obra</div>
                 </div>
-                <a href="${item.links.bookCli}" target="_blank" class="btn-mini">📄 Book</a>
-                <a href="${item.links.vid1}" target="_blank" class="btn-mini" style="background:var(--mrv-laranja)">🎥 Vídeo</a>
+                ${item.dica ? `<div style="font-size:0.5rem; background:#fff5e6; padding:4px; border-radius:3px; margin-bottom:5px;">${item.dica}</div>` : ''}
+                <a href="${item.links.bookCli}" target="_blank" class="btn-mini">📄 Book Cliente</a>
+                <a href="${item.links.vid1}" target="_blank" class="btn-mini" style="background:var(--mrv-laranja)">🎥 Vídeo 1</a>
             `;
         }
+
         window.onload = iniciarApp;
     </script>
 </body>
