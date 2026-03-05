@@ -1,86 +1,24 @@
-/* --- VARIAVEIS E BASE --- */
-:root {
-    --mrv-verde: #065e03;
-    --mrv-laranja: #ff8c00;
-    --mrv-azul: #007bff;
-    --cinza-fundo: #f8f9fa;
-    --cinza-borda: #ddd;
-    --texto-escuro: #333;
+/* Garante que o SVG aceite interação */
+svg {
+    width: 100%;
+    height: 100%;
+    pointer-events: all; /* Importante! */
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-body { background: white; color: var(--texto-escuro); }
-
-/* --- COMPONENTES DA LISTA LATERAL --- */
-.item-grupo { 
-    background: var(--texto-escuro); 
-    color: white; 
-    padding: 6px; 
-    font-size: 0.65rem; 
-    text-align: center; 
-    margin: 12px 0 6px 0; 
-    border-radius: 4px; 
-    text-transform: uppercase; 
-    font-weight: bold;
-    letter-spacing: 1px;
+path {
+    transition: fill 0.2s, stroke 0.2s;
+    pointer-events: visiblePainted; /* Faz apenas a área desenhada ser clicável */
+    cursor: default;
 }
 
-.btRes { 
-    width: 100%; 
-    padding: 10px; 
-    margin-bottom: 5px; 
-    background: #fff; 
-    border: 1px solid #eee; 
-    border-left: 5px solid var(--mrv-verde); 
-    text-align: left; 
-    cursor: pointer; 
-    border-radius: 4px;
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    transition: 0.2s;
+/* Onde tem MRV, o mouse vira a "mãozinha" */
+path.commrv {
+    cursor: pointer !important;
 }
 
-.btRes:hover { background: #f0f0f0; }
-
-.btRes.ativo { 
-    background: #fff5e6 !important; 
-    border-left-color: var(--mrv-laranja) !important; 
-    font-weight: bold; 
+/* Efeito de Hover */
+path.commrv:hover {
+    fill: #0a8a05 !important; /* Verde mais escuro no hover */
+    stroke: #000;
+    stroke-width: 1px;
 }
-
-/* Estilo para Lançamento (L) */
-.btRes.tipo-L { border-left-color: var(--mrv-azul); background: #f0f7ff; }
-
-/* --- BADGES DE ESTOQUE --- */
-.badge-estoque { font-size: 0.65rem; font-weight: bold; }
-.estoque-L { color: var(--mrv-azul); }
-.estoque-V { color: #999; text-decoration: line-through; }
-.estoque-R { color: #666; }
-
-/* --- MAPA SVG --- */
-path { fill: #d1d1d1; stroke: #fff; stroke-width: 0.6; transition: 0.3s; }
-.commrv { fill: var(--mrv-verde) !important; cursor: pointer; }
-.path-ativo { 
-    fill: var(--mrv-laranja) !important; 
-    stroke: #000 !important; 
-    stroke-width: 1.5; 
-}
-
-/* --- TOAST NOTIFICATION --- */
-#toast { 
-    visibility: hidden; 
-    min-width: 200px; 
-    background: #333; 
-    color: #fff; 
-    text-align: center; 
-    border-radius: 4px; 
-    padding: 12px; 
-    position: fixed; 
-    z-index: 9999; 
-    left: 50%; 
-    bottom: 30px; 
-    transform: translateX(-50%); 
-}
-#toast.show { visibility: visible; }
