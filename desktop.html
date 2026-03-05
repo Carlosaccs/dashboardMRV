@@ -5,111 +5,22 @@
     <title>Dashboard MRV SP - Desktop v5.0</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Ajustes finos de layout para a versão Desktop */
-        body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #f0f2f5; }
-        
-        .header { 
-            background: var(--mrv-verde); 
-            color: white; 
-            padding: 12px; 
-            text-align: center; 
-            font-weight: bold; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-
+        body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #fff; }
+        .header { background: var(--mrv-verde); color: white; padding: 10px; text-align: center; font-weight: bold; }
         .wrapper { display: flex; flex: 1; overflow: hidden; }
-
-        /* Coluna Esquerda: Lista */
-        .sidebar-esq { 
-            width: 20%; 
-            border-right: 1px solid var(--cinza-borda); 
-            overflow-y: auto; 
-            padding: 10px; 
-            background: #fff; 
-        }
-
-        /* Centro: Área dos Mapas */
-        .conteudo-centro { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background: #fff;
-            position: relative;
-        }
+        .sidebar-esq { width: 22%; border-right: 1px solid var(--cinza-borda); overflow-y: auto; padding: 10px; background: var(--cinza-fundo); }
+        .conteudo-centro { flex: 1; display: flex; flex-direction: column; }
+        .mapa-container { flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+        #caixa-a { flex: 1.5; border-bottom: 1px solid #eee; position: relative; }
+        #caixa-b { flex: 1; position: relative; }
+        .sidebar-dir { width: 30%; border-left: 1px solid var(--cinza-borda); overflow-y: auto; padding: 15px; background: #fdfdfd; }
         
-        #cidade-titulo { 
-            padding: 10px; 
-            text-align: center; 
-            font-weight: bold; 
-            background: #f8f9fa; 
-            border-bottom: 1px solid #eee;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            color: #555;
-            letter-spacing: 1px;
-        }
-
-        .mapa-container { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 10px;
-            gap: 15px;
-        }
-
-        /* Caixas dos Mapas */
-        #caixa-a { flex: 2; border-bottom: 1px dashed #eee; position: relative; }
-        #caixa-b { flex: 1; position: relative; opacity: 0.9; }
-
-        /* Coluna Direita: Ficha Técnica (Vitrine) */
-        .sidebar-dir { 
-            width: 30%; 
-            border-left: 1px solid var(--cinza-borda); 
-            overflow-y: auto; 
-            padding: 20px; 
-            background: #f8f9fa;
-        }
-
-        /* Estilo dos Cards na Ficha (quando tem vários) */
-        .ficha-card {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--mrv-verde);
-            transition: transform 0.2s;
-        }
-        .ficha-card:hover { transform: translateY(-2px); }
-        
-        .ficha-header h2 { font-size: 1.1rem; color: var(--mrv-verde); margin-bottom: 5px; }
-        .ficha-header p { font-size: 0.8rem; color: #666; margin-bottom: 12px; }
-
-        .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .info-box { background: #f4f7f4; padding: 8px; border-radius: 4px; border: 1px solid #edf2ed; }
-        .info-box label { display: block; font-size: 0.6rem; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
-        .info-box span { font-size: 0.85rem; color: #333; font-weight: 500; }
-
-        .dica-box { background: #fff5e6; border: 1px solid #ffe8cc; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-        .dica-box label { color: #d67e00; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; display: block; }
-        .dica-box p { font-size: 0.8rem; color: #5c4321; line-height: 1.3; }
-
-        .btn-link { 
-            display: inline-block; 
-            width: 100%;
-            text-align: center;
-            padding: 10px; 
-            background: var(--mrv-verde); 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            font-size: 0.8rem; 
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .btn-link:hover { background: var(--mrv-verde-hover); }
-
+        .ficha-card { background: white; border-radius: 6px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--mrv-verde); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .info-box { background: #f4f4f4; padding: 8px; border-radius: 4px; font-size: 0.8rem; }
+        .info-box label { display: block; font-size: 0.6rem; color: #888; text-transform: uppercase; font-weight: bold; }
+        .dica-box { background: #fff5e6; padding: 8px; border-radius: 4px; margin-top: 5px; border-left: 3px solid var(--mrv-laranja); }
+        .btn-link { display: block; width: 100%; text-align: center; padding: 10px; background: var(--mrv-verde); color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -117,20 +28,18 @@
 <div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v5.0</div>
 
 <div class="wrapper">
-    <aside class="sidebar-esq" id="lista-imoveis">Carregando lista...</aside>
+    <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
     
     <main class="conteudo-centro">
-        <div id="cidade-titulo">Selecione uma região no mapa</div>
+        <div id="cidade-titulo" style="padding:10px; text-align:center; font-weight:bold; background:#eee; font-size: 0.75rem;">SELECIONE UMA REGIÃO NO MAPA</div>
         <div class="mapa-container">
-            <div id="caixa-a"></div>
-            <div id="caixa-b"></div>
-        </div>
+            <div id="caixa-a"></div> <div id="caixa-b"></div> </div>
     </main>
 
     <aside class="sidebar-dir" id="ficha-tecnica">
-        <div style="text-align:center; color:#bbb; margin-top:100px;">
-            <span style="font-size: 50px;">📍</span>
-            <p>Clique em uma cidade verde no mapa<br>para ver os empreendimentos disponíveis.</p>
+        <div style="text-align:center; color:#ccc; margin-top:100px;">
+            <p style="font-size: 40px;">📍</p>
+            <p>Selecione uma cidade verde no mapa para ver todos os empreendimentos.</p>
         </div>
     </aside>
 </div>
@@ -140,11 +49,9 @@
 <script src="mrv-data.js"></script>
 <script src="mrv-engine.js"></script>
 <script>
-    // Função para construir a lista lateral
     function gerarListaLateral() {
         const list = document.getElementById('lista-imoveis');
         list.innerHTML = "";
-        
         DADOS_PLANILHA.forEach(item => {
             if (item.tipo === 'N') {
                 const div = document.createElement('div');
@@ -155,58 +62,17 @@
                 const btn = document.createElement('button');
                 btn.className = `btRes tipo-${item.tipo}`;
                 btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                btn.innerHTML = `
-                    <div>
-                        <strong>${item.nome}</strong><br>
-                        <small style="color:#888">${item.bairro}</small>
-                    </div> 
-                    ${obterHtmlEstoque(item.estoque, item.tipo)}
-                `;
-                btn.onclick = () => selecionarIndividual(item, btn);
+                btn.innerHTML = `<div><strong>${item.nome}</strong><br><small>${item.cidade}</small></div> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                btn.onclick = () => {
+                    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+                    btn.classList.add('ativo');
+                    cliqueNoMapa(item.id_path);
+                };
                 list.appendChild(btn);
             }
         });
-        
-        // Após gerar a lista, desenha os mapas
         desenharIniciais();
     }
-
-    // Função quando clica no botão da lista (Mostra apenas UM residencial)
-    function selecionarIndividual(item, btn) {
-        // Estilo do botão
-        document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-        if(btn) btn.classList.add('ativo');
-
-        // Destaque no Mapa
-        const path = document.getElementById(item.id_path);
-        if(path) destacarNoMapa(path);
-
-        // Preenche a Ficha Técnica com apenas UM card
-        const painelFicha = document.getElementById('ficha-tecnica');
-        painelFicha.innerHTML = gerarHtmlCard(item);
-    }
-
-    // Função auxiliar para criar o HTML do card (usado pelo motor e pela lista)
-    function gerarHtmlCard(item) {
-        return `
-            <div class="ficha-card">
-                <div class="ficha-header">
-                    <h2>${item.nome}</h2>
-                    <p>📍 <strong>${item.bairro}</strong> - ${item.cidade}<br><small>${item.endereco}</small></p>
-                </div>
-                <div class="ficha-grid">
-                    <div class="info-box"><label>💰 Preço</label><span>${item.preco}</span></div>
-                    <div class="info-box"><label>🔑 Entrega</label><span>${item.entrega}</span></div>
-                    <div class="info-box"><label>📐 Plantas</label><span>${item.plantas}</span></div>
-                    <div class="info-box"><label>🏗️ Obra</label><span>${item.obra}%</span></div>
-                </div>
-                ${item.dica ? `<div class="dica-box"><label>💡 Dica do Corretor</label><p>${item.dica}</p></div>` : ''}
-                <a href="${item.links.bookCli}" target="_blank" class="btn-link">📄 Baixar Book do Cliente</a>
-            </div>
-        `;
-    }
-
-    // Inicia tudo
     window.onload = iniciarApp;
 </script>
 </body>
