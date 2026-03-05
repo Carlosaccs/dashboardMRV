@@ -2,108 +2,124 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard MRV SP - Desktop</title>
+    <title>Dashboard MRV SP v4.0</title>
     <style>
-        /* Estilos Base */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body, html { height: 100vh; overflow: hidden; background: #fff; }
+        body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        header { background: #065e03; height: 50px; display: flex; align-items: center; justify-content: center; color: white; position: relative; }
-        .main-wrapper { display: flex; height: calc(100% - 50px); width: 100%; }
+        /* Header e Cores */
+        .header { background: #065e03; color: white; padding: 10px; text-align: center; font-weight: bold; }
+        .wrapper { display: flex; flex: 1; overflow: hidden; }
 
-        /* Coluna Lateral */
-        .col-lateral-esq { width: 22%; background: #f8f9fa; overflow-y: auto; padding: 10px; border-right: 1px solid #ddd; }
+        /* Coluna Esquerda: Listagem */
+        .sidebar-esq { width: 20%; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px; background: #f9f9f9; }
+        .item-grupo { background: #333; color: #fff; padding: 6px; font-size: 0.7rem; text-align: center; margin: 10px 0 5px; border-radius: 4px; text-transform: uppercase; font-weight: bold; }
         
-        /* NOVO: Estilo para Títulos de Grupo (Tipo N) */
-        .titulo-grupo { 
-            background: #333; color: white; padding: 5px 10px; margin: 15px 0 8px 0;
-            font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
-            border-radius: 4px; letter-spacing: 1px; text-align: center;
-        }
+        .btn-res { width: 100%; padding: 8px; margin-bottom: 4px; border: 1px solid #eee; border-left: 5px solid #065e03; border-radius: 4px; background: white; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .btn-res:hover { background: #f0f0f0; }
+        .btn-res.ativo { border-left-color: #ff8c00; background: #fff5e6; }
+        .btn-res.tipo-L { border-left-color: #007bff; }
+        
+        /* Badges */
+        .badge-L { color: #007bff; font-size: 0.6rem; font-weight: bold; }
+        .badge-R { color: #666; font-size: 0.6rem; }
+        .badge-V { color: #999; text-decoration: line-through; font-size: 0.6rem; }
 
-        .btRes { 
-            width: 100%; padding: 8px 12px; margin-bottom: 5px; background: #fff; 
-            border: 1px solid #eee; border-left: 5px solid #065e03; 
-            text-align: left; cursor: pointer; font-size: 0.72rem; border-radius: 4px;
-            display: flex; justify-content: space-between; align-items: center; transition: 0.2s;
-        }
-        .btRes:hover { background: #f0f0f0; border-left-color: #ff8c00; }
-        .btRes.ativo { background: #ff8c00 !important; color: white !important; border-left-color: #065e03 !important; font-weight: bold; }
-        
-        /* NOVO: Estilo para Lançamento (Tipo L) */
-        .btRes.is-lancamento { border-left-color: #007bff; background: #f0f7ff; }
-        .estoque-lancamento { color: #007bff !important; font-weight: bold; }
+        /* Centro: Mapas */
+        .conteudo-centro { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .mapa-container { flex: 1; position: relative; }
+        svg { width: 100%; height: 100%; }
+        path { fill: #ccc; stroke: #fff; stroke-width: 0.5; transition: 0.3s; }
+        .commrv { fill: #065e03; cursor: pointer; }
+        .path-ativo { fill: #ff8c00 !important; stroke: #000 !important; stroke-width: 1.5; }
 
-        .estoque-status { font-size: 0.65rem; color: #666; }
-        .estoque-alerta { color: #d32f2f !important; font-weight: bold; }
-        .estoque-vendido { text-decoration: line-through; color: #999 !important; }
+        /* Direita: Ficha Técnica */
+        .sidebar-dir { width: 30%; border-left: 1px solid #ddd; overflow-y: auto; padding: 15px; }
+        .ficha-header { border-bottom: 2px solid #ff8c00; margin-bottom: 10px; padding-bottom: 5px; }
+        .ficha-header h2 { font-size: 1.1rem; color: #065e03; }
+        .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .info-box { font-size: 0.8rem; background: #f4f4f4; padding: 8px; border-radius: 4px; }
+        .info-box label { display: block; font-size: 0.6rem; color: #888; text-transform: uppercase; font-weight: bold; }
 
-        /* Mapas e Painel Direito */
-        .col-central { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .container-mapas { flex: 1; position: relative; overflow: hidden; }
-        .col-lateral-dir { width: 32%; padding: 15px; overflow-y: auto; border-left: 1px solid #ddd; }
-        
-        /* SVG */
-        path { stroke: #fff; stroke-width: 0.5; fill: #838383; transition: 0.2s; cursor: default; }
-        .commrv { fill: #065e03 !important; cursor: pointer !important; }
-        .path-ativo { fill: #ff8c00 !important; stroke: #000 !important; stroke-width: 1.5px !important; }
-        
-        /* Componentes de Link e Preview (conforme seu original) */
-        #preview-box { position: fixed; width: 320px; height: 220px; background: #fff; border: 3px solid #065e03; display: none; z-index: 2000; pointer-events: none; }
-        #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 4px; padding: 10px; position: fixed; left: 50%; top: 30px; transform: translateX(-50%); }
-        #toast.show { visibility: visible; }
+        /* Links */
+        .btn-link { display: inline-block; padding: 5px 10px; background: #065e03; color: white; text-decoration: none; border-radius: 3px; font-size: 0.75rem; margin: 2px; }
     </style>
 </head>
 <body>
 
-    <header><h1>Dashboard MRV - São Paulo</h1></header>
+<div class="header">DASHBOARD MRV SP - DASHBOARDMRV_SP_2</div>
 
-    <div class="main-wrapper">
-        <aside class="col-lateral-esq" id="menu-residenciais">Carregando...</aside>
-        
-        <main class="col-central">
-            <div id="display-nome" style="text-align:center; padding: 10px; font-weight:bold; border-bottom:1px solid #eee;">Selecione uma região</div>
-            <div class="container-mapas" id="container-mapas">
-                <div id="caixa-a" class="caixa-troca pos-cima"></div>
-                <div id="caixa-b" class="caixa-troca pos-baixo"></div>
+<div class="wrapper">
+    <aside class="sidebar-esq" id="lista-imoveis"></aside>
+    
+    <main class="conteudo-centro">
+        <div id="cidade-titulo" style="padding:10px; text-align:center; font-weight:bold; background:#eee;">Selecione uma região</div>
+        <div class="mapa-container" id="container-mapas">
+            <div id="caixa-a"></div>
+        </div>
+    </main>
+
+    <aside class="sidebar-dir" id="ficha-tecnica">
+        <p style="color:#999; text-align:center; margin-top:50px;">Selecione um residencial para ver os detalhes.</p>
+    </aside>
+</div>
+
+<script src="mrv-data.js"></script>
+<script src="mrv-engine.js"></script>
+<script>
+    function gerarListaLateral() {
+        const list = document.getElementById('lista-imoveis');
+        list.innerHTML = "";
+        DADOS_PLANILHA.forEach(item => {
+            if (item.tipo === 'N') {
+                const div = document.createElement('div');
+                div.className = 'item-grupo';
+                div.innerText = item.nome;
+                list.appendChild(div);
+            } else {
+                const btn = document.createElement('button');
+                btn.className = `btn-res tipo-${item.tipo}`;
+                btn.innerHTML = `<div><strong>${item.nome}</strong><br><small>${item.cidade}</small></div> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                btn.onclick = () => selecionar(item, btn);
+                list.appendChild(btn);
+            }
+        });
+    }
+
+    function selecionar(item, btn) {
+        // Remove destaques anteriores
+        document.querySelectorAll('.btn-res').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+
+        // Atualiza Ficha
+        document.getElementById('ficha-tecnica').innerHTML = `
+            <div class="ficha-header">
+                <h2>${item.nome}</h2>
+                <p>📍 ${item.endereco}</p>
             </div>
-        </main>
+            <div class="ficha-grid">
+                <div class="info-box"><label>💰 Preço</label>${item.preco}</div>
+                <div class="info-box"><label>🔑 Entrega</label>${item.entrega}</div>
+                <div class="info-box"><label>📐 Plantas</label>${item.plantas}</div>
+                <div class="info-box"><label>🏗️ Obra</label>${item.obra}%</div>
+            </div>
+            <div class="info-box" style="margin-bottom:10px;"><label>💡 Dica</label>${item.dica}</div>
+            <h3>Downloads</h3>
+            <div style="margin-top:10px;">
+                ${item.links.bookCli ? `<a href="${item.links.bookCli}" target="_blank" class="btn-link">📄 Book Cliente</a>` : ''}
+                ${item.links.bookCor ? `<a href="${item.links.bookCor}" target="_blank" class="btn-link">🔐 Book Corretor</a>` : ''}
+                ${item.links.vid1 ? `<a href="${item.links.vid1}" target="_blank" class="btn-link">🎥 Vídeo</a>` : ''}
+            </div>
+        `;
+    }
 
-        <aside class="col-lateral-dir" id="detalhes-residencial"></aside>
-    </div>
-
-    <div id="preview-box"><iframe id="preview-frame" style="width:100%; height:100%; border:none;"></iframe></div>
-    <div id="toast">Copiado!</div>
-
-    <script src="mrv-data.js"></script>
-    <script src="mrv-engine.js"></script>
-    <script>
-        // Função para gerar a lista lateral diferenciando Grupos (N) de Imóveis (R/L)
-        function gerarListaLateral() {
-            const menu = document.getElementById('menu-residenciais');
-            menu.innerHTML = "";
-            
-            DADOS_PLANILHA.forEach(item => {
-                if (item.tipo === 'GRUPO') {
-                    const div = document.createElement('div');
-                    div.className = 'titulo-grupo';
-                    div.innerText = item.nome;
-                    menu.appendChild(div);
-                } else {
-                    const btn = document.createElement('button');
-                    btn.className = `btRes ${item.tipo === 'LANCAMENTO' ? 'is-lancamento' : ''}`;
-                    btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                    btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
-                    btn.onclick = () => selecionarResidencial(item, btn);
-                    menu.appendChild(btn);
-                }
-            });
+    window.onload = () => {
+        carregarPlanilha();
+        // Aqui chamamos a função de desenhar o mapa do seu mrv-data.js
+        if(typeof MAPA_GSP !== 'undefined') {
+            // lógica para desenhar o SVG no desktop
         }
-
-        // ... aqui você incluirá as funções de desenhar mapa e selecionarResidencial 
-        // que já temos, apenas apontando para as colunas novas.
-        
-        window.onload = iniciarApp;
-    </script>
+    };
+</script>
 </body>
 </html>
