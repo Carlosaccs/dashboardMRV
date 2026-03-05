@@ -1,1 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard MRV SP - Desktop</title>
+    <style>
+        /* Estilos Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body, html { height: 100vh; overflow: hidden; background: #fff; }
+        
+        header { background: #065e03; height: 50px; display: flex; align-items: center; justify-content: center; color: white; position: relative; }
+        .main-wrapper { display: flex; height: calc(100% - 50px); width: 100%; }
 
+        /* Coluna Lateral */
+        .col-lateral-esq { width: 22%; background: #f8f9fa; overflow-y: auto; padding: 10px; border-right: 1px solid #ddd; }
+        
+        /* NOVO: Estilo para Títulos de Grupo (Tipo N) */
+        .titulo-grupo { 
+            background: #333; color: white; padding: 5px 10px; margin: 15px 0 8px 0;
+            font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
+            border-radius: 4px; letter-spacing: 1px; text-align: center;
+        }
+
+        .btRes { 
+            width: 100%; padding: 8px 12px; margin-bottom: 5px; background: #fff; 
+            border: 1px solid #eee; border-left: 5px solid #065e03; 
+            text-align: left; cursor: pointer; font-size: 0.72rem; border-radius: 4px;
+            display: flex; justify-content: space-between; align-items: center; transition: 0.2s;
+        }
+        .btRes:hover { background: #f0f0f0; border-left-color: #ff8c00; }
+        .btRes.ativo { background: #ff8c00 !important; color: white !important; border-left-color: #065e03 !important; font-weight: bold; }
+        
+        /* NOVO: Estilo para Lançamento (Tipo L) */
+        .btRes.is-lancamento { border-left-color: #007bff; background: #f0f7ff; }
+        .estoque-lancamento { color: #007bff !important; font-weight: bold; }
+
+        .estoque-status { font-size: 0.65rem; color: #666; }
+        .estoque-alerta { color: #d32f2f !important; font-weight: bold; }
+        .estoque-vendido { text-decoration: line-through; color: #999 !important; }
+
+        /* Mapas e Painel Direito */
+        .col-central { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .container-mapas { flex: 1; position: relative; overflow: hidden; }
+        .col-lateral-dir { width: 32%; padding: 15px; overflow-y: auto; border-left: 1px solid #ddd; }
+        
+        /* SVG */
+        path { stroke: #fff; stroke-width: 0.5; fill: #838383; transition: 0.2s; cursor: default; }
+        .commrv { fill: #065e03 !important; cursor: pointer !important; }
+        .path-ativo { fill: #ff8c00 !important; stroke: #000 !important; stroke-width: 1.5px !important; }
+        
+        /* Componentes de Link e Preview (conforme seu original) */
+        #preview-box { position: fixed; width: 320px; height: 220px; background: #fff; border: 3px solid #065e03; display: none; z-index: 2000; pointer-events: none; }
+        #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 4px; padding: 10px; position: fixed; left: 50%; top: 30px; transform: translateX(-50%); }
+        #toast.show { visibility: visible; }
+    </style>
+</head>
+<body>
+
+    <header><h1>Dashboard MRV - São Paulo</h1></header>
+
+    <div class="main-wrapper">
+        <aside class="col-lateral-esq" id="menu-residenciais">Carregando...</aside>
+        
+        <main class="col-central">
+            <div id="display-nome" style="text-align:center; padding: 10px; font-weight:bold; border-bottom:1px solid #eee;">Selecione uma região</div>
+            <div class="container-mapas" id="container-mapas">
+                <div id="caixa-a" class="caixa-troca pos-cima"></div>
+                <div id="caixa-b" class="caixa-troca pos-baixo"></div>
+            </div>
+        </main>
+
+        <aside class="col-lateral-dir" id="detalhes-residencial"></aside>
+    </div>
+
+    <div id="preview-box"><iframe id="preview-frame" style="width:100%; height:100%; border:none;"></iframe></div>
+    <div id="toast">Copiado!</div>
+
+    <script src="mrv-data.js"></script>
+    <script src="mrv-engine.js"></script>
+    <script>
+        // Função para gerar a lista lateral diferenciando Grupos (N) de Imóveis (R/L)
+        function gerarListaLateral() {
+            const menu = document.getElementById('menu-residenciais');
+            menu.innerHTML = "";
+            
+            DADOS_PLANILHA.forEach(item => {
+                if (item.tipo === 'GRUPO') {
+                    const div = document.createElement('div');
+                    div.className = 'titulo-grupo';
+                    div.innerText = item.nome;
+                    menu.appendChild(div);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = `btRes ${item.tipo === 'LANCAMENTO' ? 'is-lancamento' : ''}`;
+                    btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                    btn.onclick = () => selecionarResidencial(item, btn);
+                    menu.appendChild(btn);
+                }
+            });
+        }
+
+        // ... aqui você incluirá as funções de desenhar mapa e selecionarResidencial 
+        // que já temos, apenas apontando para as colunas novas.
+        
+        window.onload = iniciarApp;
+    </script>
+</body>
+</html>
