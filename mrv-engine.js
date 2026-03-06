@@ -1,5 +1,6 @@
 let DADOS_PLANILHA = [];
 let pathSelecionado = null;
+let nomeSelecionado = ""; // Armazena o nome da região clicada
 let mapaAtivo = 'GSP'; 
 
 const COL = {
@@ -54,13 +55,10 @@ function renderizarNoContainer(id, dados, interativo) {
     
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        const acoes = interativo ? `onclick="cliqueNoMapa('${p.id}', '${p.name}')" onmouseover="hoverNoMapa('${p.name}')"` : "";
-        // Cor verde fixa para quem tem MRV no mapa principal
-        const classeExtra = (temMRV && interativo) ? 'commrv-fixo' : '';
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" style="${temMRV && interativo ? 'fill: var(--mrv-verde);' : ''}" ${acoes}></path>`;
+        const acoes = interativo ? `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})" onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acoes}></path>`;
     }).join('');
 
-    // Mapa de baixo 10% menor (zoom 0.6)
     const zoom = interativo ? 'scale(1)' : 'scale(0.6)';
     container.innerHTML = `<svg viewBox="${dados.viewBox}" style="transform: ${zoom}; transform-origin: center;">
         <g transform="${dados.transform || ''}">${pathsHtml}</g>
@@ -70,25 +68,19 @@ function renderizarNoContainer(id, dados, interativo) {
     container.style.cursor = interativo ? "default" : "pointer";
 }
 
-function trocarMapas() {
-    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP';
-    limparSelecao();
-    desenharMapas();
-}
-
-function limparSelecao() {
-    pathSelecionado = null;
-    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    document.getElementById('cidade-titulo').innerText = "SELECIONE UMA REGIÃO NO MAPA";
-    document.getElementById('ficha-tecnica').innerHTML = `
-        <div style="text-align:center; color:#ccc; margin-top:100px;">
-            <p style="font-size:30px;">📍</p>
-            <p>Clique num residencial ou em uma região verde do mapa</p>
-        </div>`;
-}
-
 function hoverNoMapa(nome) {
-    if (!pathSelecionado) document.getElementById('cidade-titulo').innerText = nome;
+    document.getElementById('cidade-titulo').innerText = nome;
+}
+
+function resetTitulo() {
+    // Quando o mouse sai, volta para o selecionado ou limpa se nada houver
+    document.getElementById('cidade-titulo').innerText = nomeSelecionado;
+}
+
+function cliqueNoMapa(id, nome, temMRV) {
+    if (!temMRV) return; // BLOQUEIO: Só áreas verdes podem ser clicadas
+    nomeSelecionado = nome;
+    comandoSelecao(id, nome, 'mapa');
 }
 
 function comandoSelecao(idPath, nomePath, fonte) {
@@ -107,7 +99,9 @@ function comandoSelecao(idPath, nomePath, fonte) {
         pathSelecionado = el;
     }
 
+    nomeSelecionado = nomePath;
     document.getElementById('cidade-titulo').innerText = nomePath;
+
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
     if (imoveis.length > 0) {
         const selecionado = (typeof fonte === 'object' && fonte.nome) ? fonte : imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
@@ -115,8 +109,22 @@ function comandoSelecao(idPath, nomePath, fonte) {
     }
 }
 
-function cliqueNoMapa(id, nome) {
-    comandoSelecao(id, nome, 'mapa');
+function trocarMapas() {
+    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP';
+    limparSelecao();
+    desenharMapas();
+}
+
+function limparSelecao() {
+    pathSelecionado = null;
+    nomeSelecionado = "";
+    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('cidade-titulo').innerText = "";
+    document.getElementById('ficha-tecnica').innerHTML = `
+        <div style="text-align:center; color:#ccc; margin-top:100px;">
+            <p style="font-size:30px;">📍</p>
+            <p>Clique num residencial ou em uma região verde do mapa</p>
+        </div>`;
 }
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
@@ -124,8 +132,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
     
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    const idLimpo = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
-    const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
+    const btnEsq = document.getElementById(`btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`);
     if (btnEsq) btnEsq.classList.add('ativo');
 
     painel.innerHTML = `
