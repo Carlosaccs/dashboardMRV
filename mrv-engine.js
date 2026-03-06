@@ -1,6 +1,6 @@
 let DADOS_PLANILHA = [];
 let pathSelecionado = null;
-let mapaAtivo = 'GSP'; // Inicia com Grande SP em cima
+let mapaAtivo = 'GSP'; 
 
 const COL = {
     ID: 0, TIPO: 1, NOME: 2, ESTOQUE: 3, END: 4, BAIRRO: 5, CIDADE: 6,
@@ -44,7 +44,6 @@ async function carregarPlanilha() {
 function desenharMapas() {
     const dadosCima = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
     const dadosBaixo = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
-
     renderizarNoContainer('caixa-a', dadosCima, true);
     renderizarNoContainer('caixa-b', dadosBaixo, false);
 }
@@ -56,11 +55,13 @@ function renderizarNoContainer(id, dados, interativo) {
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
         const acoes = interativo ? `onclick="cliqueNoMapa('${p.id}', '${p.name}')" onmouseover="hoverNoMapa('${p.name}')"` : "";
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acoes}></path>`;
+        // Cor verde fixa para quem tem MRV no mapa principal
+        const classeExtra = (temMRV && interativo) ? 'commrv-fixo' : '';
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" style="${temMRV && interativo ? 'fill: var(--mrv-verde);' : ''}" ${acoes}></path>`;
     }).join('');
 
-    // Mapa de baixo renderizado 30% menor conforme solicitado
-    const zoom = interativo ? 'scale(1)' : 'scale(0.7)';
+    // Mapa de baixo 10% menor (zoom 0.6)
+    const zoom = interativo ? 'scale(1)' : 'scale(0.6)';
     container.innerHTML = `<svg viewBox="${dados.viewBox}" style="transform: ${zoom}; transform-origin: center;">
         <g transform="${dados.transform || ''}">${pathsHtml}</g>
     </svg>`;
@@ -90,17 +91,15 @@ function hoverNoMapa(nome) {
     if (!pathSelecionado) document.getElementById('cidade-titulo').innerText = nome;
 }
 
-// NOVA LOGICA: Acionada tanto pelo mapa quanto pelos botões da esquerda
 function comandoSelecao(idPath, nomePath, fonte) {
-    // 1. Verifica se o path pertence ao mapa que está embaixo
     const estaNoGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase() === idPath.toLowerCase());
     const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase() === idPath.toLowerCase());
 
     if ((estaNoGSP && mapaAtivo !== 'GSP') || (estaNoInterior && mapaAtivo !== 'INTERIOR')) {
-        trocarMapas();
+        mapaAtivo = estaNoGSP ? 'GSP' : 'INTERIOR';
+        desenharMapas();
     }
 
-    // 2. Agora destaca o path (que agora certamente está na caixa-a)
     const el = document.getElementById(`caixa-a-${idPath}`);
     if (el) {
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
@@ -109,16 +108,13 @@ function comandoSelecao(idPath, nomePath, fonte) {
     }
 
     document.getElementById('cidade-titulo').innerText = nomePath;
-    
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
     if (imoveis.length > 0) {
-        // Se a fonte for o mapa, seleciona o primeiro. Se for botão, o botão será marcado no montarVitrine
-        const selecionado = (typeof fonte === 'object') ? fonte : imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
+        const selecionado = (typeof fonte === 'object' && fonte.nome) ? fonte : imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
         montarVitrine(selecionado, imoveis, nomePath);
     }
 }
 
-// Mantido para compatibilidade com os cliques diretos no SVG
 function cliqueNoMapa(id, nome) {
     comandoSelecao(id, nome, 'mapa');
 }
