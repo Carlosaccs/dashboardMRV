@@ -55,18 +55,35 @@ function renderizarNoContainer(id, dados, interativo) {
     
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        const acoes = interativo ? `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})" onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acoes}></path>`;
+        
+        // REGRA NOVA: No mapa do interior (Estado), o path 'grandesaopaulo' troca de mapa
+        let acaoClique = "";
+        if (interativo) {
+            if (p.id.toLowerCase() === 'grandesaopaulo' && mapaAtivo === 'INTERIOR') {
+                acaoClique = `onclick="trocarMapas()"`;
+            } else {
+                acaoClique = `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
+            }
+        }
+
+        const acoesHover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acaoClique} ${acoesHover}></path>`;
     }).join('');
 
-    // Proporções atualizadas: Cima +20% (scale 1.2), Baixo +30% (scale 0.9)
     const zoom = interativo ? 'scale(1.2)' : 'scale(0.9)';
     container.innerHTML = `<svg viewBox="${dados.viewBox}" style="transform: ${zoom}; transform-origin: center;">
         <g transform="${dados.transform || ''}">${pathsHtml}</g>
     </svg>`;
     
-    container.onclick = interativo ? null : trocarMapas;
-    container.style.cursor = interativo ? "default" : "pointer";
+    // Caixa de baixo sempre troca de mapa
+    if (!interativo) {
+        container.onclick = trocarMapas;
+        container.style.cursor = "pointer";
+    } else {
+        container.onclick = null;
+        container.style.cursor = "default";
+    }
 }
 
 function hoverNoMapa(nome) {
@@ -92,7 +109,6 @@ function comandoSelecao(idPath, nomePath, fonte) {
         desenharMapas();
     }
 
-    // Aguarda o render se houver troca antes de destacar
     setTimeout(() => {
         const el = document.getElementById(`caixa-a-${idPath}`);
         if (el) {
@@ -100,14 +116,14 @@ function comandoSelecao(idPath, nomePath, fonte) {
             el.classList.add('path-ativo');
             pathSelecionado = el;
         }
-    }, 10);
+    }, 50);
 
     nomeSelecionado = nomePath;
     document.getElementById('cidade-titulo').innerText = nomePath;
 
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
     if (imoveis.length > 0) {
-        const selecionado = (typeof fonte === 'object' && fonte.nome) ? fonte : imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
+        const selecionado = (fonte && fonte.nome) ? fonte : imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
         montarVitrine(selecionado, imoveis, nomePath);
     }
 }
