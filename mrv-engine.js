@@ -1,6 +1,6 @@
 let DADOS_PLANILHA = [];
 let pathSelecionado = null;
-let nomeSelecionado = ""; // Armazena o nome da região clicada
+let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
 const COL = {
@@ -59,7 +59,8 @@ function renderizarNoContainer(id, dados, interativo) {
         return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acoes}></path>`;
     }).join('');
 
-    const zoom = interativo ? 'scale(1)' : 'scale(0.6)';
+    // Proporções atualizadas: Cima +20% (scale 1.2), Baixo +30% (scale 0.9)
+    const zoom = interativo ? 'scale(1.2)' : 'scale(0.9)';
     container.innerHTML = `<svg viewBox="${dados.viewBox}" style="transform: ${zoom}; transform-origin: center;">
         <g transform="${dados.transform || ''}">${pathsHtml}</g>
     </svg>`;
@@ -73,12 +74,11 @@ function hoverNoMapa(nome) {
 }
 
 function resetTitulo() {
-    // Quando o mouse sai, volta para o selecionado ou limpa se nada houver
     document.getElementById('cidade-titulo').innerText = nomeSelecionado;
 }
 
 function cliqueNoMapa(id, nome, temMRV) {
-    if (!temMRV) return; // BLOQUEIO: Só áreas verdes podem ser clicadas
+    if (!temMRV) return; 
     nomeSelecionado = nome;
     comandoSelecao(id, nome, 'mapa');
 }
@@ -92,12 +92,15 @@ function comandoSelecao(idPath, nomePath, fonte) {
         desenharMapas();
     }
 
-    const el = document.getElementById(`caixa-a-${idPath}`);
-    if (el) {
-        if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-        el.classList.add('path-ativo');
-        pathSelecionado = el;
-    }
+    // Aguarda o render se houver troca antes de destacar
+    setTimeout(() => {
+        const el = document.getElementById(`caixa-a-${idPath}`);
+        if (el) {
+            if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
+            el.classList.add('path-ativo');
+            pathSelecionado = el;
+        }
+    }, 10);
 
     nomeSelecionado = nomePath;
     document.getElementById('cidade-titulo').innerText = nomePath;
