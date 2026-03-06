@@ -55,8 +55,6 @@ function renderizarNoContainer(id, dados, interativo) {
     
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        
-        // REGRA NOVA: No mapa do interior (Estado), o path 'grandesaopaulo' troca de mapa
         let acaoClique = "";
         if (interativo) {
             if (p.id.toLowerCase() === 'grandesaopaulo' && mapaAtivo === 'INTERIOR') {
@@ -65,9 +63,7 @@ function renderizarNoContainer(id, dados, interativo) {
                 acaoClique = `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
             }
         }
-
         const acoesHover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
-        
         return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acaoClique} ${acoesHover}></path>`;
     }).join('');
 
@@ -76,23 +72,14 @@ function renderizarNoContainer(id, dados, interativo) {
         <g transform="${dados.transform || ''}">${pathsHtml}</g>
     </svg>`;
     
-    // Caixa de baixo sempre troca de mapa
     if (!interativo) {
         container.onclick = trocarMapas;
         container.style.cursor = "pointer";
-    } else {
-        container.onclick = null;
-        container.style.cursor = "default";
     }
 }
 
-function hoverNoMapa(nome) {
-    document.getElementById('cidade-titulo').innerText = nome;
-}
-
-function resetTitulo() {
-    document.getElementById('cidade-titulo').innerText = nomeSelecionado;
-}
+function hoverNoMapa(nome) { document.getElementById('cidade-titulo').innerText = nome; }
+function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado; }
 
 function cliqueNoMapa(id, nome, temMRV) {
     if (!temMRV) return; 
@@ -156,29 +143,33 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
 
     painel.innerHTML = `
         <div class="vitrine-topo">MRV em ${nomeRegiao}</div>
-        <div style="margin-bottom:15px;">
+        
+        <div style="margin-bottom:15px; max-height: 150px; overflow-y: auto;">
             ${outros.map(o => `
                 <button class="btRes" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')">
                     <strong>${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}
                 </button>
             `).join('')}
         </div>
-        <div style="border-top:1px solid #eee; padding-top:15px;">
-            <div class="btRes ativo" style="cursor:default; margin-bottom:10px;">
-                <strong>${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}
-            </div>
-            <p style="font-size:0.7rem; color:#666; margin-bottom:10px;">📍 ${selecionado.endereco}</p>
+
+        <div class="destaque-vitrine">
+            <h2>${selecionado.nome}</h2>
+            ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}
+        </div>
+
+        <div style="padding-top:5px;">
+            <p style="font-size:0.75rem; color:#444; margin-bottom:12px; font-weight: 500;">📍 ${selecionado.endereco}</p>
             <div class="ficha-grid">
                 <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
                 <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
                 <div class="info-box"><label>📐 Plantas</label><span>${selecionado.plantas}</span></div>
                 <div class="info-box"><label>🏗️ Obra</label><span>${selecionado.obra}%</span></div>
             </div>
-            <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 3px solid var(--mrv-laranja);">
+            <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 4px solid var(--mrv-laranja);">
                 <label style="color:#d67e00;">💡 Dica do Corretor</label>
-                <p style="font-size:0.75rem;">${selecionado.dica}</p>
+                <p style="font-size:0.75rem; line-height: 1.3;">${selecionado.dica}</p>
             </div>
-            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Book Cliente</a>
+            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none; height: 40px; border-left: none;">📄 Book Cliente</a>
         </div>
     `;
 }
@@ -192,9 +183,9 @@ function navegarVitrine(nome, nomeRegiao) {
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
     const n = parseInt(valor);
-    if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${valor} UN!</span>`;
-    if (valor === "VENDIDO" || n === 0) return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
-    return `<span class="badge-estoque" style="color:#666">RESTAM ${valor} UN.</span>`;
+    if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010; background: white; padding: 2px 5px; border-radius: 3px;">SÓ ${valor} UN!</span>`;
+    if (valor === "VENDIDO" || n === 0) return `<span class="badge-estoque" style="color:#999; background: white; padding: 2px 5px; border-radius: 3px;">VENDIDO</span>`;
+    return `<span class="badge-estoque" style="color:#666; background: white; padding: 2px 5px; border-radius: 3px;">${valor} UN.</span>`;
 }
 
 function limparLinkDrive(url) {
