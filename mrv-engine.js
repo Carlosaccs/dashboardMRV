@@ -1,20 +1,16 @@
 let DADOS_PLANILHA = [];
 let pathSelecionado = null;
-let nomeSelecionado = "";
-let mapaAtivo = 'GSP';
+let nomeSelecionado = ""; 
+let mapaAtivo = 'GSP'; 
 
-// MAPEAMENTO EXATO DA SUA PLANILHA
+// Mapeamento de colunas atualizado
 const COL = {
-    ID_PATH: 0, TIPO: 1, NOME: 2, ESTOQUE: 3, ENDERECO: 4, BAIRRO: 5, CIDADE: 6,
-    ENTREGA: 7, PRECO: 8, P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, OBS: 13,
-    LOC_TXT: 14, MOBILIDADE: 15, CULTURA: 16, COMERCIO: 17, SAUDE: 18,
-    BK_CLIENTE: 19, BK_CORRETOR: 20, VID1: 21, VID2: 22,
-    LOC_MAPA: 34, IMPLANTACAO: 35
+    ID: 0, TIPO: 1, NOME: 2, ESTOQUE: 3, END: 4, BAIRRO: 5, CIDADE: 6,
+    ENTREGA: 7, PRECO: 8, P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, 
+    DIF: 13, LAZER: 14, SEG: 15, BK_CLI: 19
 };
 
-async function iniciarApp() {
-    await carregarPlanilha();
-}
+async function iniciarApp() { await carregarPlanilha(); }
 
 async function carregarPlanilha() {
     const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzECvkefpM6aWy0IacqqI6l84_ti6zS1lSjcrgL0J4OcrtWZLb63sh7U1ZTQ4nsqDMeTU5ykl8xtDe/pub?output=csv";
@@ -22,130 +18,138 @@ async function carregarPlanilha() {
         const response = await fetch(`${URL_CSV}&v=${new Date().getTime()}`);
         const texto = await response.text();
         const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-        
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^!]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
             return {
-                id_path: c[COL.ID_PATH]?.toLowerCase(),
-                tipo: c[COL.TIPO], nome: c[COL.NOME], estoque: c[COL.ESTOQUE],
-                endereco: c[COL.ENDERECO], bairro: c[COL.BAIRRO], cidade: c[COL.CIDADE],
-                entrega: c[COL.ENTREGA], preco: c[COL.PRECO], 
+                id_path: c[COL.ID]?.toLowerCase(),
+                tipo: c[COL.TIPO] || "R",
+                nome: c[COL.NOME],
+                estoque: c[COL.ESTOQUE],
+                endereco: c[COL.END],
+                bairro: c[COL.BAIRRO],
+                cidade: c[COL.CIDADE],
+                entrega: c[COL.ENTREGA],
+                preco: c[COL.PRECO],
                 plantas: `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}`,
-                obra: c[COL.OBRA], dica: c[COL.DICA], obs: c[COL.OBS],
-                materiais: [
-                    { label: "Book Cliente", url: limparLinkDrive(c[COL.BK_CLIENTE]) },
-                    { label: "Book Corretor", url: limparLinkDrive(c[COL.BK_CORRETOR]) },
-                    { label: "Mapa Localização", url: limparLinkDrive(c[COL.LOC_MAPA]) },
-                    { label: "Implantação", url: limparLinkDrive(c[COL.IMPLANTACAO]) },
-                    { label: "Vídeo 1", url: c[COL.VID1] },
-                    { label: "Vídeo 2", url: c[COL.VID2] }
-                ]
+                obra: c[COL.OBRA],
+                dica: c[COL.DICA],
+                diferenciais: c[COL.DIF],
+                lazer: c[COL.LAZER],
+                seguranca: c[COL.SEG],
+                book: limparLinkDrive(c[COL.BK_CLI])
             };
-        }).filter(item => item.nome);
-        
-        gerarListaLateral();
+        }).filter(i => i.nome);
+        if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
-    } catch (e) { console.error("Erro ao carregar planilha:", e); }
+    } catch (e) { console.error("Erro:", e); }
 }
 
 function desenharMapas() {
-    const principal = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
-    const mini = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
-    renderizarSVG('caixa-a', principal, true);
-    renderizarSVG('caixa-b', mini, false);
+    const dC = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
+    const dB = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
+    renderizarNoContainer('caixa-a', dC, true);
+    renderizarNoContainer('caixa-b', dB, false);
 }
 
-function renderizarSVG(containerId, dados, interativo) {
-    const container = document.getElementById(containerId);
-    const paths = dados.paths.map(p => {
+function renderizarNoContainer(id, dados, interativo) {
+    const container = document.getElementById(id);
+    const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        const acao = interativo ? 
-            `onclick="comandoSelecao('${p.id}', '${p.name}')"` : 
-            `onclick="alternarMapas()"`;
-        return `<path id="${containerId}-${p.id}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acao}></path>`;
+        let clk = interativo ? (p.id.toLowerCase() === 'grandesaopaulo' && mapaAtivo === 'INTERIOR' ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
+        const hvr = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${clk} ${hvr}></path>`;
     }).join('');
-    container.innerHTML = `<svg viewBox="${dados.viewBox}">${paths}</svg>`;
+    const zoom = interativo ? 'scale(1.2)' : 'scale(0.9)';
+    container.innerHTML = `<svg viewBox="${dados.viewBox}" style="transform: ${zoom}; transform-origin: center;"><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+    if (!interativo) { container.onclick = trocarMapas; container.style.cursor = "pointer"; }
 }
 
-function comandoSelecao(id, nome, objDireto = null) {
-    if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-    const el = document.getElementById(`caixa-a-${id}`);
-    if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
+function hoverNoMapa(n) { document.getElementById('cidade-titulo').innerText = n; }
+function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado; }
 
+function cliqueNoMapa(id, nome, temMRV) {
+    if (!temMRV) return; 
     nomeSelecionado = nome;
-    document.getElementById('cidade-titulo').innerText = nome;
-
-    const item = objDireto || DADOS_PLANILHA.find(d => d.id_path === id.toLowerCase());
-    if (item) montarVitrine(item);
+    comandoSelecao(id, nome, 'mapa');
 }
 
-function montarVitrine(item) {
-    // Sincroniza botão da esquerda
-    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    const btnEsq = document.getElementById(`btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`);
-    if (btnEsq) btnEsq.classList.add('ativo');
+function comandoSelecao(idPath, nomePath, fonte) {
+    const estaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase() === idPath.toLowerCase());
+    if ((estaGSP && mapaAtivo !== 'GSP') || (!estaGSP && mapaAtivo !== 'INTERIOR')) {
+        mapaAtivo = estaGSP ? 'GSP' : 'INTERIOR';
+        desenharMapas();
+    }
+    setTimeout(() => {
+        const el = document.getElementById(`caixa-a-${idPath}`);
+        if (el) { if (pathSelecionado) pathSelecionado.classList.remove('path-ativo'); el.classList.add('path-ativo'); pathSelecionado = el; }
+    }, 50);
+    nomeSelecionado = nomePath;
+    document.getElementById('cidade-titulo').innerText = nomePath;
+    const imovs = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
+    if (imovs.length > 0) {
+        const sel = (fonte && fonte.nome) ? fonte : imovs.sort((a,b) => a.nome.localeCompare(b.nome))[0];
+        montarVitrine(sel, imovs, nomePath);
+    }
+}
 
-    // Gera HTML dos materiais
-    const htmlMateriais = item.materiais.map(mat => {
-        if (!mat.url || mat.url.length < 10) return "";
-        return `
-            <div class="material-row">
-                <span class="material-name">${mat.label}</span>
-                <div class="material-actions">
-                    <button class="btn-link abrir" onclick="window.open('${mat.url}', '_blank')">ABRIR</button>
-                    <button class="btn-link copiar" onclick="copiarLink('${mat.url}')">COPIAR</button>
-                </div>
-                <div class="preview-thumb"><iframe src="${mat.url}"></iframe></div>
-            </div>`;
-    }).join('');
+function trocarMapas() { mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; limparSelecao(); desenharMapas(); }
+
+function limparSelecao() {
+    pathSelecionado = null; nomeSelecionado = "";
+    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+    document.getElementById('cidade-titulo').innerText = "";
+    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size:30px;">📍</p><p>Selecione uma região verde no mapa.</p></div>`;
+}
+
+function montarVitrine(sel, lista, regiao) {
+    const outros = lista.filter(i => i.nome !== sel.nome);
+    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+    const bE = document.getElementById(`btn-esq-${sel.nome.replace(/[^a-zA-Z0-9]/g, '-')}`);
+    if (bE) bE.classList.add('ativo');
+
+    // Lógica de dicas dinâmicas
+    let dicasExtras = "";
+    if (sel.diferenciais) dicasExtras += `<div class="info-box"><label>Diferenciais</label><span>${sel.diferenciais}</span></div>`;
+    if (sel.lazer) dicasExtras += `<div class="info-box"><label>Lazer</label><span>${sel.lazer}</span></div>`;
+    if (sel.seguranca) dicasExtras += `<div class="info-box"><label>Segurança</label><span>${sel.seguranca}</span></div>`;
 
     document.getElementById('ficha-tecnica').innerHTML = `
+        <div class="vitrine-topo">MRV em ${regiao}</div>
+        <div style="margin-bottom:12px; max-height: 120px; overflow-y: auto;">
+            ${outros.map(o => `<button class="btRes" onclick="navegarVitrine('${o.nome}', '${regiao}')"><strong>${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
+        </div>
         <div class="destaque-vitrine">
-            <h2>${item.nome}</h2>
+            <h2>${sel.nome}</h2>
+            <div style="margin-top:5px;">${obterHtmlEstoque(sel.estoque, sel.tipo)}</div>
         </div>
-        <p style="font-size:0.7rem; color:#555; margin-bottom:10px;">📍 ${item.endereco} - ${item.bairro}</p>
-        
+        <p style="font-size:0.75rem; color:#444; margin-bottom:10px; font-weight: 500;">📍 ${sel.endereco} - ${sel.bairro}</p>
         <div class="ficha-grid">
-            <div class="info-box"><label>💰 Preço</label><span>${item.preco}</span></div>
-            <div class="info-box"><label>🔑 Entrega</label><span>${item.entrega}</span></div>
-            <div class="info-box"><label>📐 Plantas</label><span>${item.plantas}</span></div>
-            <div class="info-box"><label>🏗️ Obra</label><span>${item.obra}%</span></div>
+            <div class="info-box"><label>💰 Preço</label><span>${sel.preco}</span></div>
+            <div class="info-box"><label>🔑 Entrega</label><span>${sel.entrega}</span></div>
+            <div class="info-box"><label>📐 Plantas</label><span>${sel.plantas}</span></div>
+            <div class="info-box"><label>🏗️ Obra</label><span>${sel.obra}%</span></div>
         </div>
-
-        <div class="info-box" style="background:#fff5e6; border-left:4px solid var(--mrv-laranja);">
+        <div class="info-box" style="background:#fff5e6; border-left: 4px solid var(--mrv-laranja);">
             <label style="color:#d67e00;">DICA</label>
-            <p style="font-size:0.75rem;">${item.dica}</p>
+            <p style="font-size:0.75rem; line-height: 1.3;">${sel.dica}</p>
         </div>
-
-        <div class="material-container">
-            <p style="font-size:0.6rem; font-weight:bold; color:#999; margin-bottom:5px; text-transform:uppercase;">Materiais de Venda</p>
-            ${htmlMateriais}
-        </div>
+        ${dicasExtras}
+        <a href="${sel.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; height: 38px;">📄 Book Cliente</a>
     `;
+}
+
+function navegarVitrine(n, r) { const imov = DADOS_PLANILHA.find(i => i.nome === n); const lst = DADOS_PLANILHA.filter(i => i.id_path === imov.id_path); montarVitrine(imov, lst, r); }
+
+function obterHtmlEstoque(v, t) {
+    if (t === 'N') return "";
+    const n = parseInt(v);
+    if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${v} UN!</span>`;
+    if (v === "VENDIDO" || n === 0) return `<span class="badge-estoque" style="color:#999;">VENDIDO</span>`;
+    return `<span class="badge-estoque" style="color:#666;">${v} UN.</span>`;
 }
 
 function limparLinkDrive(url) {
     if (!url || !url.includes('drive.google.com')) return url;
-    // Extrai o ID e coloca no modo /preview para ficar "limpo" e permitir iframe
-    const reg = /\/d\/(.+?)\//;
-    const match = url.match(reg);
-    if (match && match[1]) {
-        return `https://drive.google.com/file/d/${match[1]}/preview`;
-    }
-    return url;
-}
-
-function copiarLink(url) {
-    navigator.clipboard.writeText(url);
-    alert("Link copiado!");
-}
-
-function alternarMapas() {
-    mapaAtivo = (mapaAtivo === 'GSP' ? 'INTERIOR' : 'GSP');
-    desenharMapas();
-}
-
-function obterHtmlEstoque(v, t) {
-    if (t === 'N') return "";
-    return `<span class="badge-estoque">${v} un</span>`;
+    const match = url.match(/\/d\/(.+?)\/|\/d\/(.+?)$|id=(.+?)(&|$)/);
+    return match ? `https://drive.google.com/file/d/${match[1]||match[2]||match[3]}/preview` : url;
 }
