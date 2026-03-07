@@ -1,6 +1,6 @@
 :root {
     --mrv-verde: #065e03;
-    --mrv-verde-hover: #ff8c00;
+    --mrv-verde-hover: #f0f7f0;
     --mrv-laranja: #ff8c00;
     --cinza-mapa: #999999;
     --texto-escuro: #333;
@@ -14,7 +14,6 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 .sidebar-esq { width: 25%; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px; background: #f8f9fa; }
 
-/* Ajuste do Hover nos Botões (btRes) */
 .btRes { 
     width: 100%; padding: 8px 10px; margin-bottom: 5px; background: #fff; 
     border: 1px solid #eee; border-left: 4px solid var(--mrv-verde); 
@@ -22,16 +21,23 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     display: flex; justify-content: space-between; align-items: center; 
     font-size: 0.72rem; transition: 0.15s;
 }
+
 .btRes strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
 
-/* Efeito de Hover em ambos os lados */
 .btRes:hover { 
-    background: #f0f7f0 !important; 
+    background: var(--mrv-verde-hover) !important; 
     border-color: var(--mrv-verde);
     transform: translateX(2px);
 }
 
-.btRes.ativo { background: #fff5e6 !important; border-left-color: var(--mrv-laranja) !important; font-weight: bold; }
+/* NOVO ESTILO SELECIONADO (Conforme o print enviado) */
+.btRes.ativo { 
+    background: var(--mrv-laranja) !important; 
+    color: white !important; 
+    border: 1px solid #d67e00 !important;
+    font-weight: bold; 
+}
+.btRes.ativo .badge-estoque { color: white !important; }
 
 .conteudo-centro { flex: 1; display: flex; flex-direction: column; }
 #cidade-titulo { background: #eee; padding: 8px; text-align: center; font-weight: bold; font-size: 0.75rem; color: #555; height: 35px; display: flex; align-items: center; justify-content: center; }
@@ -42,12 +48,10 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 svg { width: 100%; height: 100%; }
 path { fill: var(--cinza-mapa); stroke: #ffffff; stroke-width: 0.8; transition: 0.2s; pointer-events: all; }
 
-/* Regras de Cores e Interação */
 #caixa-a path.commrv { fill: var(--mrv-verde); cursor: pointer; }
 #caixa-a path:hover { fill: var(--mrv-laranja) !important; cursor: pointer; }
 path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1.8px !important; }
 
-/* Estilo específico para o 'botão' Grande São Paulo no mapa do Estado */
 #caixa-a path[id*="grandesaopaulo"] { fill: var(--mrv-verde) !important; cursor: pointer; }
 
 .sidebar-dir { width: 30%; border-left: 1px solid #ddd; overflow-y: auto; padding: 15px; }
