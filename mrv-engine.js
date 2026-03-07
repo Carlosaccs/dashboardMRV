@@ -10,6 +10,7 @@ const COL = {
 };
 
 async function iniciarApp() {
+    console.log("Iniciando App...");
     await carregarPlanilha();
 }
 
@@ -17,13 +18,14 @@ async function carregarPlanilha() {
     const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzECvkefpM6aWy0IacqqI6l84_ti6zS1lSjcrgL0J4OcrtWZLb63sh7U1ZTQ4nsqDMeTU5ykl8xtDe/pub?output=csv";
     try {
         const resp = await fetch(`${URL_CSV}&v=${new Date().getTime()}`);
+        if (!resp.ok) throw new Error("Erro ao acessar planilha");
         const texto = await resp.text();
         const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
             const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
             return {
-                id_path: c[COL.ID]?.toLowerCase(),
+                id_path: (c[COL.ID] || "").toLowerCase(),
                 tipo: c[COL.TIPO], nome: c[COL.NOME], estoque: c[COL.ESTOQUE],
                 endereco: c[COL.END], bairro: c[COL.BAIRRO], cidade: c[COL.CIDADE],
                 entrega: c[COL.ENTREGA], preco: c[COL.PRECO], 
@@ -38,12 +40,21 @@ async function carregarPlanilha() {
             };
         }).filter(i => i.nome);
 
+        console.log("Planilha carregada:", DADOS_PLANILHA.length, "itens");
         gerarListaLateral();
         desenharMapas();
-    } catch (e) { console.error("Erro CSV:", e); }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('lista-imoveis').innerHTML = "<p style='color:red; padding:10px;'>Erro ao carregar dados da planilha.</p>";
+    }
 }
 
 function desenharMapas() {
+    // Verifica se as variáveis do mrv-data.js existem
+    if (typeof MAPA_GSP === 'undefined' || typeof MAPA_INTERIOR === 'undefined') {
+        alert("Erro: Dados do mapa (mrv-data.js) não encontrados!");
+        return;
+    }
     const dC = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
     const dB = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
     
@@ -53,35 +64,39 @@ function desenharMapas() {
 
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
+    if (!container) return;
+
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        const classe = temMRV && interativo ? 'commrv' : '';
-        // Injetando eventos diretamente no HTML para máxima compatibilidade
-        const eventos = interativo ? 
-            `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})" onmouseover="document.getElementById('cidade-titulo').innerText='${p.name}'" onmouseout="document.getElementById('cidade-titulo').innerText=nomeSelecionado"` : 
-            `onclick="trocarMapas()"`;
+        const classe = (temMRV && interativo) ? 'commrv' : '';
         
-        return `<path id="${id}-${p.id}" d="${p.d}" class="${classe}" ${eventos}></path>`;
+        // Atributos de evento injetados para evitar falhas de escopo
+        const acaoClique = interativo ? 
+            `onclick="window.cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"` : 
+            `onclick="window.trocarMapas()"`;
+            
+        const acaoHover = interativo ?
+            `onmouseover="window.hoverMapa('${p.name}')" onmouseout="window.resetMapa()"` : "";
+
+        return `<path id="${id}-${p.id}" d="${p.d}" class="${classe}" ${acaoClique} ${acaoHover}></path>`;
     }).join('');
     
     container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet"><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
-    
-    if(!interativo) {
-        container.onclick = trocarMapas;
-    } else {
-        container.onclick = null;
-    }
 }
 
-function cliqueNoMapa(id, nome, temMRV) {
+// Funções globais para garantir que o 'onclick' no HTML as encontre
+window.hoverMapa = function(n) { document.getElementById('cidade-titulo').innerText = n; };
+window.resetMapa = function() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "SELECIONE UMA REGIÃO NO MAPA"; };
+
+window.cliqueNoMapa = function(id, nome, temMRV) {
     if (!temMRV) return;
-    comandoSelecao(id, nome);
-}
+    window.comandoSelecao(id, nome);
+};
 
-function comandoSelecao(idPath, nomePath) {
+window.comandoSelecao = function(idPath, nomePath) {
     const el = document.getElementById(`caixa-a-${idPath}`);
+    if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
     if (el) {
-        if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
         el.classList.add('path-ativo');
         pathSelecionado = el;
     }
@@ -90,7 +105,14 @@ function comandoSelecao(idPath, nomePath) {
 
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
     if (imoveis.length > 0) montarVitrine(imoveis[0]);
-}
+};
+
+window.trocarMapas = function() {
+    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP';
+    nomeSelecionado = "";
+    document.getElementById('cidade-titulo').innerText = "SELECIONE UMA REGIÃO";
+    desenharMapas();
+};
 
 function montarVitrine(sel) {
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
@@ -103,48 +125,40 @@ function montarVitrine(sel) {
                 <span style="font-size:0.65rem; font-weight:bold;">${m.lab}</span>
                 <div>
                     <button class="btn-acao btn-abrir" onclick="window.open('${m.url}','_blank')">Abrir</button>
-                    <button class="btn-acao btn-copiar" onclick="navigator.clipboard.writeText('${m.url}');alert('Copiado!')">Copiar</button>
+                    <button class="btn-acao btn-copiar" onclick="navigator.clipboard.writeText('${m.url}');alert('Link Copiado!')">Copiar</button>
                 </div>
                 <div class="preview-box"><iframe src="${m.url}"></iframe></div>
             </div>`).join('');
 
     document.getElementById('ficha-tecnica').innerHTML = `
         <div class="destaque-vitrine"><h2>${sel.nome}</h2></div>
-        <p style="font-size:0.7rem; margin-bottom:10px;">📍 ${sel.endereco} - ${sel.bairro}</p>
+        <p style="font-size:0.75rem; margin-bottom:12px;">📍 ${sel.endereco} - ${sel.bairro}</p>
         <div class="info-box"><label>💰 Preço</label><span>${sel.preco}</span></div>
         <div class="info-box"><label>🔑 Entrega</label><span>${sel.entrega}</span></div>
-        <div class="info-box" style="background:#fff5e6; border-left:4px solid var(--mrv-laranja);"><label>DICA</label><p style="font-size:0.75rem;">${sel.dica}</p></div>
-        <div style="margin-top:15px;">${htmlMateriais}</div>
+        <div class="info-box" style="background:#fff5e6; border-left:4px solid var(--mrv-laranja);"><label style="color:#d67e00;">DICA</label><p style="font-size:0.75rem;">${sel.dica}</p></div>
+        <div style="margin-top:20px;"><p style="font-size:0.6rem; font-weight:bold; color:#999; margin-bottom:5px; text-transform:uppercase;">Materiais de Venda</p>${htmlMateriais}</div>
     `;
 }
 
 function gerarListaLateral() {
     const list = document.getElementById('lista-imoveis');
+    if (!list) return;
     list.innerHTML = "";
     DADOS_PLANILHA.forEach(item => {
         const btn = document.createElement('button');
         btn.className = 'btRes';
         btn.id = `btn-esq-${item.nome.replace(/\s+/g, '')}`;
         btn.innerHTML = `<strong>${item.nome}</strong>`;
-        // Forçando o clique no botão
         btn.onclick = (e) => {
-            e.preventDefault();
             const estaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase() === item.id_path);
             if ((estaGSP && mapaAtivo !== 'GSP') || (!estaGSP && mapaAtivo !== 'INTERIOR')) {
                 mapaAtivo = estaGSP ? 'GSP' : 'INTERIOR';
                 desenharMapas();
             }
-            setTimeout(() => comandoSelecao(item.id_path, item.cidade), 100);
+            setTimeout(() => window.comandoSelecao(item.id_path, item.cidade), 100);
         };
         list.appendChild(btn);
     });
-}
-
-function trocarMapas() {
-    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP';
-    nomeSelecionado = "";
-    document.getElementById('cidade-titulo').innerText = "SELECIONE UMA REGIÃO";
-    desenharMapas();
 }
 
 function limparLink(url) {
