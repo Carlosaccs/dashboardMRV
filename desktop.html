@@ -10,12 +10,17 @@
 <div class="wrapper">
     <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
     <main class="conteudo-centro">
-        <div id="cidade-titulo"></div> 
+        <div id="cidade-titulo">SELECIONE UMA REGIÃO</div> 
         <div id="caixa-a"></div> 
         <div id="caixa-b"></div> 
     </main>
-    <aside class="sidebar-dir" id="ficha-tecnica"></aside>
+    <aside class="sidebar-dir" id="ficha-tecnica">
+        <div style="text-align:center; padding-top:50px; color:#ccc;">
+            <h3>Selecione um residencial</h3>
+        </div>
+    </aside>
 </div>
+
 <script src="mrv-data.js"></script>
 <script src="mrv-engine.js"></script>
 <script>
@@ -23,14 +28,22 @@
         const list = document.getElementById('lista-imoveis');
         list.innerHTML = "";
         DADOS_PLANILHA.forEach(item => {
-            const btn = document.createElement('button');
-            btn.className = `btRes`;
-            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque)}`;
-            btn.onclick = () => comandoSelecao(item.id_path, "", item);
-            list.appendChild(btn);
+            if (item.tipo === 'N') {
+                const div = document.createElement('div');
+                div.style = "background:#333; color:white; padding:5px; font-size:0.65rem; text-align:center; margin:10px 0; border-radius:4px;";
+                div.innerText = item.nome;
+                list.appendChild(div);
+            } else {
+                const btn = document.createElement('button');
+                btn.className = `btRes`;
+                btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
+                list.appendChild(btn);
+            }
         });
     }
+    // O iniciarApp já chama carregarPlanilha que por sua vez chama gerarListaLateral
     window.onload = iniciarApp;
 </script>
 </body>
