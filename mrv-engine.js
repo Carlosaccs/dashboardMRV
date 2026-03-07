@@ -5,10 +5,8 @@ let mapaAtivo = 'GSP';
 
 const COL = {
     ID: 0, TIPO: 1, NOME: 2, ESTOQUE: 3, END: 4, BAIRRO: 5, CIDADE: 6,
-    ENTREGA: 7, PRECO: 8, P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, OBS: 13,
-    LOC: 14, MOB: 15, LAZER: 16, COM: 17, SAUDE: 18,
-    BK_CLI: 19, BK_COR: 20, VID1: 21, VID2: 22,
-    MAPA_LOC: 34, MAPA_IMP: 35
+    ENTREGA: 7, PRECO: 8, P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12,
+    BK_CLI: 19, BK_COR: 20, VID1: 21, VID2: 22, MAPA_LOC: 34, MAPA_IMP: 35
 };
 
 async function iniciarApp() {
@@ -31,19 +29,11 @@ async function carregarPlanilha() {
                 entrega: c[COL.ENTREGA], preco: c[COL.PRECO], 
                 plantas: `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}`,
                 obra: c[COL.OBRA], dica: c[COL.DICA],
-                extras: [
-                    { lab: "Localização", val: c[COL.LOC] },
-                    { lab: "Mobilidade", val: c[COL.MOB] },
-                    { lab: "Lazer/Cultura", val: c[COL.LAZER] },
-                    { lab: "Comércio", val: c[COL.COM] },
-                    { lab: "Saúde/Educação", val: c[COL.SAUDE] }
-                ],
                 materiais: [
                     { lab: "📄 Book Cliente", url: limparLink(c[COL.BK_CLI]) },
                     { lab: "🔑 Book Corretor", url: limparLink(c[COL.BK_COR]) },
-                    { lab: "📍 Localização (Link)", url: limparLink(c[COL.MAPA_LOC]) },
-                    { lab: "🏗️ Implantação", url: limparLink(c[COL.MAPA_IMP]) },
-                    { lab: "🎬 Vídeo 1", url: limparLink(c[COL.VID1]) }
+                    { lab: "📍 Localização", url: limparLink(c[COL.MAPA_LOC]) },
+                    { lab: "🏗️ Implantação", url: limparLink(c[COL.MAPA_IMP]) }
                 ]
             };
         }).filter(i => i.nome);
@@ -56,6 +46,7 @@ async function carregarPlanilha() {
 function desenharMapas() {
     const dC = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
     const dB = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
+    
     renderizarNoContainer('caixa-a', dC, true);
     renderizarNoContainer('caixa-b', dB, false);
 }
@@ -64,17 +55,23 @@ function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     const pathsHtml = dados.paths.map(p => {
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === p.id.toLowerCase());
-        const acoes = interativo ? 
-            `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})" onmouseover="hoverMapa('${p.name}')" onmouseout="resetMapa()"` : 
+        const classe = temMRV && interativo ? 'commrv' : '';
+        // Injetando eventos diretamente no HTML para máxima compatibilidade
+        const eventos = interativo ? 
+            `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})" onmouseover="document.getElementById('cidade-titulo').innerText='${p.name}'" onmouseout="document.getElementById('cidade-titulo').innerText=nomeSelecionado"` : 
             `onclick="trocarMapas()"`;
-        return `<path id="${id}-${p.id}" d="${p.d}" class="${temMRV && interativo ? 'commrv' : ''}" ${acoes}></path>`;
+        
+        return `<path id="${id}-${p.id}" d="${p.d}" class="${classe}" ${eventos}></path>`;
     }).join('');
     
-    container.innerHTML = `<svg viewBox="${dados.viewBox}"><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet"><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+    
+    if(!interativo) {
+        container.onclick = trocarMapas;
+    } else {
+        container.onclick = null;
+    }
 }
-
-function hoverMapa(n) { document.getElementById('cidade-titulo').innerText = n; }
-function resetMapa() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "SELECIONE UMA REGIÃO NO MAPA"; }
 
 function cliqueNoMapa(id, nome, temMRV) {
     if (!temMRV) return;
@@ -82,62 +79,42 @@ function cliqueNoMapa(id, nome, temMRV) {
 }
 
 function comandoSelecao(idPath, nomePath) {
-    // 1. Destacar no mapa
-    if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
     const el = document.getElementById(`caixa-a-${idPath}`);
-    if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
-
-    // 2. Atualizar títulos
+    if (el) {
+        if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
+        el.classList.add('path-ativo');
+        pathSelecionado = el;
+    }
     nomeSelecionado = nomePath;
     document.getElementById('cidade-titulo').innerText = nomePath;
 
-    // 3. Montar Vitrine
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
-    if (imoveis.length > 0) montarVitrine(imoveis[0], imoveis, nomePath);
+    if (imoveis.length > 0) montarVitrine(imoveis[0]);
 }
 
-function montarVitrine(sel, lista, regiao) {
-    // Sincronizar botões da esquerda
+function montarVitrine(sel) {
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
     const bE = document.getElementById(`btn-esq-${sel.nome.replace(/\s+/g, '')}`);
     if (bE) bE.classList.add('ativo');
 
-    let htmlExtras = sel.extras.filter(e => e.val && e.val.length > 2)
-        .map(e => `<div class="info-box"><label>${e.lab}</label><span>${e.val}</span></div>`).join('');
-
-    let htmlMateriais = sel.materiais.filter(m => m.url && m.url.length > 10)
+    const htmlMateriais = sel.materiais.filter(m => m.url && m.url.length > 10)
         .map(m => `
             <div class="material-row">
-                <span class="material-label">${m.lab}</span>
-                <div style="display:flex;">
+                <span style="font-size:0.65rem; font-weight:bold;">${m.lab}</span>
+                <div>
                     <button class="btn-acao btn-abrir" onclick="window.open('${m.url}','_blank')">Abrir</button>
-                    <button class="btn-acao btn-copiar" onclick="copiarLink('${m.url}')">Copiar</button>
+                    <button class="btn-acao btn-copiar" onclick="navigator.clipboard.writeText('${m.url}');alert('Copiado!')">Copiar</button>
                 </div>
                 <div class="preview-box"><iframe src="${m.url}"></iframe></div>
             </div>`).join('');
 
     document.getElementById('ficha-tecnica').innerHTML = `
-        <div class="destaque-vitrine">
-            <h2>${sel.nome}</h2>
-            <div style="font-size:0.7rem; margin-top:5px;">${obterHtmlEstoque(sel.estoque, sel.tipo)}</div>
-        </div>
-        <p style="font-size:0.75rem; margin-bottom:10px;">📍 ${sel.endereco} - <strong>${sel.bairro}</strong></p>
-        <div class="ficha-grid">${htmlFicha(sel)}</div>
-        <div class="info-box" style="background:#fff5e6; border-left:4px solid var(--mrv-laranja);">
-            <label style="color:#d67e00;">DICA</label>
-            <p style="font-size:0.75rem;">${sel.dica}</p>
-        </div>
-        <div style="margin-top:10px;">${htmlExtras}</div>
-        <div style="margin-top:20px;"><p style="font-size:0.6rem; font-weight:bold; color:#999; margin-bottom:8px; text-transform:uppercase;">Materiais de Venda</p>${htmlMateriais}</div>
-    `;
-}
-
-function htmlFicha(sel) {
-    return `
+        <div class="destaque-vitrine"><h2>${sel.nome}</h2></div>
+        <p style="font-size:0.7rem; margin-bottom:10px;">📍 ${sel.endereco} - ${sel.bairro}</p>
         <div class="info-box"><label>💰 Preço</label><span>${sel.preco}</span></div>
         <div class="info-box"><label>🔑 Entrega</label><span>${sel.entrega}</span></div>
-        <div class="info-box"><label>📐 Plantas</label><span>${sel.plantas}</span></div>
-        <div class="info-box"><label>🏗️ Obra</label><span>${sel.obra}%</span></div>
+        <div class="info-box" style="background:#fff5e6; border-left:4px solid var(--mrv-laranja);"><label>DICA</label><p style="font-size:0.75rem;">${sel.dica}</p></div>
+        <div style="margin-top:15px;">${htmlMateriais}</div>
     `;
 }
 
@@ -148,15 +125,16 @@ function gerarListaLateral() {
         const btn = document.createElement('button');
         btn.className = 'btRes';
         btn.id = `btn-esq-${item.nome.replace(/\s+/g, '')}`;
-        btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
-        btn.onclick = () => {
-            // Se o mapa não for o correto, troca primeiro
+        btn.innerHTML = `<strong>${item.nome}</strong>`;
+        // Forçando o clique no botão
+        btn.onclick = (e) => {
+            e.preventDefault();
             const estaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase() === item.id_path);
             if ((estaGSP && mapaAtivo !== 'GSP') || (!estaGSP && mapaAtivo !== 'INTERIOR')) {
                 mapaAtivo = estaGSP ? 'GSP' : 'INTERIOR';
                 desenharMapas();
             }
-            setTimeout(() => comandoSelecao(item.id_path, item.cidade), 50);
+            setTimeout(() => comandoSelecao(item.id_path, item.cidade), 100);
         };
         list.appendChild(btn);
     });
@@ -164,26 +142,15 @@ function gerarListaLateral() {
 
 function trocarMapas() {
     mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP';
-    pathSelecionado = null; nomeSelecionado = "";
+    nomeSelecionado = "";
+    document.getElementById('cidade-titulo').innerText = "SELECIONE UMA REGIÃO";
     desenharMapas();
-}
-
-function obterHtmlEstoque(v, t) {
-    if (t === 'N') return "";
-    const n = parseInt(v);
-    if (n < 6 && n > 0) return `<span style="color:#e31010; font-weight:bold;">SÓ ${v} UN!</span>`;
-    if (v === "VENDIDO" || n === 0) return `<span style="color:#999; font-weight:bold;">VENDIDO</span>`;
-    return `<span style="color:#666; font-weight:bold;">${v} UN.</span>`;
 }
 
 function limparLink(url) {
     if (!url || !url.includes('drive.google.com')) return url;
     const id = url.match(/\/d\/(.+?)\/|\/d\/(.+?)$|id=(.+?)(&|$)/);
     return id ? `https://drive.google.com/file/d/${id[1]||id[2]||id[3]}/preview` : url;
-}
-
-function copiarLink(url) {
-    navigator.clipboard.writeText(url).then(() => alert("Link copiado!"));
 }
 
 window.onload = iniciarApp;
