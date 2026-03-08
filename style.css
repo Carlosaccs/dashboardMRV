@@ -20,44 +20,45 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 .wrapper { display: flex; flex: 1; overflow: hidden; }
 
-/* 1. LARGURA DA CAIXA ESQUERDA REDUZIDA PARA 20% */
+/* 1. LARGURA DA CAIXA ESQUERDA (Reduzida para acompanhar os botões) */
 .sidebar-esq { 
-    width: 20%; 
+    width: 18%; 
     border-right: 1px solid #ddd; 
     overflow-y: auto; 
     padding: 10px 0; 
     background: #f8f9fa; 
 }
 
-/* 2. PROPRIEDADES COMPARTILHADAS (Para equalização total) */
+/* 2. BASE IGUAL PARA TODOS OS BOTÕES (COMPLEXO E RESIDENCIAL) */
 .btRes, .separador-complexo-btn {
-    width: 90%; /* Ocupa quase toda a largura da nova barra estreita */
-    margin: 4px auto; /* MESMA MARGEM para todos, centralizados */
-    padding: 4px 8px; /* MESMO PADDING para todos */
-    min-height: 28px; /* MESMA ALTURA MÍNIMA para todos */
+    width: 92%;           /* Comprimento reduzido conforme solicitado */
+    margin: 4px auto;     /* Distância igual para todos e centralizados */
+    padding: 4px 8px;     /* Mesmo respiro interno */
+    min-height: 28px;     /* Mesma altura para ambos */
     display: flex;
     align-items: center;
     border-radius: 4px;
     font-size: 0.68rem;
     cursor: pointer;
     transition: 0.1s;
-    border: 1px solid #eee;
+    border: 1px solid #eee; /* Borda base igual */
 }
 
-/* 3. AJUSTES ESPECÍFICOS DO COMPLEXO */
+/* 3. AJUSTE DO COMPLEXO (Agora idêntico ao btRes) */
 .separador-complexo-btn {
     background: #333;
     color: white;
-    justify-content: center; /* Título centralizado */
+    justify-content: center;
     font-weight: bold;
     text-transform: uppercase;
-    border: none;
+    /* O SEGREDO: Adicionamos uma borda da mesma cor do fundo para igualar o tamanho do btRes */
+    border-left: 4px solid #333; 
 }
 
-/* 4. AJUSTES ESPECÍFICOS DO RESIDENCIAL (btRes) */
+/* 4. AJUSTE DO RESIDENCIAL (btRes) */
 .btRes {
     background: #fff;
-    border-left: 4px solid var(--mrv-verde); /* Borda verde lateral */
+    border-left: 4px solid var(--mrv-verde); /* Borda verde que define o tamanho */
     justify-content: space-between;
     text-align: left;
 }
@@ -69,11 +70,10 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     max-width: 65%; 
 }
 
-/* HOVERS */
+/* HOVERS E ESTADOS */
 .btRes:hover { background: var(--mrv-verde-hover) !important; border-color: var(--mrv-verde); }
-.separador-complexo-btn:hover { background: #444; transform: scale(1.02); }
+.separador-complexo-btn:hover { background: #444; border-left-color: #444; }
 
-/* ESTADO ATIVO */
 .btRes.ativo { 
     background: var(--mrv-laranja) !important; 
     color: white !important; 
