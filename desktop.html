@@ -1,23 +1,70 @@
-function gerarListaLateral() {
-    const list = document.getElementById('lista-imoveis');
-    if (!list) return;
-    list.innerHTML = "";
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard MRV SP v6.8</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v6.8</div>
+
+<div class="wrapper">
+    <aside class="sidebar-esq" id="lista-imoveis">Carregando residenciais...</aside>
     
-    DADOS_PLANILHA.forEach(item => {
-        if (item.tipo === 'N') {
-            const div = document.createElement('div');
-            div.className = "separador-complexo"; // O estilo já está no seu CSS
-            div.style = "background:#333; color:white; padding:8px; font-size:0.75rem; text-align:center; margin:15px 0 5px 0; border-radius:4px; font-weight:bold; text-transform:uppercase;";
-            div.innerText = item.nome;
-            list.appendChild(div);
-        } else {
-            const btn = document.createElement('button');
-            btn.className = `btRes`;
-            // IMPORTANTE: O ID deve ser gerado limpando caracteres especiais
-            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
-            btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
-            list.appendChild(btn);
-        }
-    });
-}
+    <main class="conteudo-centro">
+        <div id="cidade-titulo"></div> 
+        <div id="caixa-a"></div> 
+        <div id="caixa-b"></div> 
+    </main>
+
+    <aside class="sidebar-dir" id="ficha-tecnica">
+        <div style="text-align:center; color:#ccc; margin-top:100px;">
+            <p style="font-size: 30px;">📍</p>
+            <p>Clique no mapa principal para ver os empreendimentos.</p>
+        </div>
+    </aside>
+</div>
+
+<script src="mrv-data.js"></script>
+<script src="mrv-engine.js"></script>
+<script>
+    /**
+     * Gera a lista lateral de imóveis
+     * Mantém a lógica de separador para registros 'N' (Complexos)
+     */
+    function gerarListaLateral() {
+        const list = document.getElementById('lista-imoveis');
+        if (!list) return;
+        list.innerHTML = "";
+        
+        DADOS_PLANILHA.forEach(item => {
+            if (item.tipo === 'N') {
+                // TIPO N: Cabeçalho escuro para o Complexo
+                const div = document.createElement('div');
+                div.style = "background:#333; color:white; padding:8px; font-size:0.75rem; text-align:center; margin:15px 0 5px 0; border-radius:4px; font-weight:bold; text-transform:uppercase; letter-spacing:1px;";
+                div.innerText = item.nome; // Aqui ele usa o NOME_CURTO da coluna 3
+                list.appendChild(div);
+            } else {
+                // TIPO R: Botão do Residencial
+                const btn = document.createElement('button');
+                btn.className = `btRes`;
+                
+                // O ID limpo é fundamental para o comandoSelecao destacar o botão correto
+                btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                
+                btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                
+                // Ao clicar, chama a seleção enviando o objeto item completo
+                btn.onclick = () => comandoSelecao(item.id_path, item.id_path.toUpperCase(), item);
+                
+                list.appendChild(btn);
+            }
+        });
+    }
+
+    // Inicia o app ao carregar a janela
+    window.onload = iniciarApp;
+</script>
+</body>
+</html>
