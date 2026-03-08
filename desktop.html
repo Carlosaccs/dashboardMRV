@@ -28,34 +28,36 @@
 
 <script src="mrv-data.js"></script>
 <script src="mrv-engine.js"></script>
+
 <script>
     /**
-     * Gera a lista lateral de imóveis
-     * Mantém a lógica de separador para registros 'N' (Complexos)
+     * Função que constrói a lista lateral dinamicamente.
+     * Ajustada para usar as propriedades corretas do objeto DADOS_PLANILHA.
      */
     function gerarListaLateral() {
         const list = document.getElementById('lista-imoveis');
         if (!list) return;
         list.innerHTML = "";
-        
+
         DADOS_PLANILHA.forEach(item => {
             if (item.tipo === 'N') {
-                // TIPO N: Cabeçalho escuro para o Complexo
+                // REGISTRO TIPO N (Complexos): Cria um cabeçalho fixo escuro
                 const div = document.createElement('div');
                 div.style = "background:#333; color:white; padding:8px; font-size:0.75rem; text-align:center; margin:15px 0 5px 0; border-radius:4px; font-weight:bold; text-transform:uppercase; letter-spacing:1px;";
-                div.innerText = item.nome; // Aqui ele usa o NOME_CURTO da coluna 3
+                div.innerText = item.nome; // Usa o Nome Curto da Coluna 3
                 list.appendChild(div);
             } else {
-                // TIPO R: Botão do Residencial
+                // REGISTRO TIPO R (Residenciais): Cria o botão clicável
                 const btn = document.createElement('button');
                 btn.className = `btRes`;
                 
-                // O ID limpo é fundamental para o comandoSelecao destacar o botão correto
+                // IMPORTANTE: O ID gerado aqui deve ser idêntico ao que o mrv-engine procura para destacar
                 btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
                 
+                // Conteúdo do botão: Nome Curto + Badge de Estoque
                 btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
                 
-                // Ao clicar, chama a seleção enviando o objeto item completo
+                // Ao clicar, aciona a lógica de seleção no mapa e na ficha
                 btn.onclick = () => comandoSelecao(item.id_path, item.id_path.toUpperCase(), item);
                 
                 list.appendChild(btn);
@@ -63,7 +65,7 @@
         });
     }
 
-    // Inicia o app ao carregar a janela
+    // Inicialização do Dashboard
     window.onload = iniciarApp;
 </script>
 </body>
