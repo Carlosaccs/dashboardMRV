@@ -1,76 +1,55 @@
 :root {
     --mrv-verde: #065e03;
-    --mrv-verde-hover: #f0f7f0;
     --mrv-laranja: #ff8c00;
-    --cinza-mapa: #999999;
-    --texto-escuro: #333;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; }
 
-/* Header */
-.header { 
-    background: var(--mrv-verde); 
-    color: white; 
-    padding: 6px; 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 0.82rem; 
-}
-
-.wrapper { display: flex; flex: 1; overflow: hidden; }
-
-/* 1. BARRA ESQUERDA: Aumentada para 270px para o texto não quebrar */
+/* Barra Lateral Esquerda - Largura fixa para não deformar */
 .sidebar-esq { 
-    width: 270px; 
+    width: 260px; 
     border-right: 1px solid #ddd; 
     overflow-y: auto; 
-    padding: 8px 0; 
+    padding: 10px 0; 
     background: #f8f9fa; 
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 
-/* 2. REGRAS IDENTICAS PARA AMBOS OS BOTÕES (Equalização total) */
+/* REGRA ÚNICA PARA IGUALDADE TOTAL */
 .btRes, .separador-complexo-btn {
-    width: 94%;           /* Ocupa quase toda a largura da barra lateral */
-    margin: 4px auto;     /* Margens iguais e centralizados */
-    padding: 6px 10px;    /* Respiro interno aumentado para melhor leitura */
-    min-height: 32px;     /* Altura idêntica para ambos */
-    display: flex;
-    align-items: center;
-    border-radius: 4px;
-    font-size: 0.7rem;
+    width: 90% !important; /* Força a largura em 90% da barra */
+    height: 32px !important; /* Força a mesma altura */
+    margin: 4px auto !important; /* Força a mesma distância e centralização */
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 10px !important;
+    border-radius: 4px !important;
+    font-size: 0.68rem !important;
+    border: 1px solid #ddd !important;
     cursor: pointer;
-    transition: 0.1s;
-    border: 1px solid #ddd;
-    border-left-width: 5px; /* Borda lateral ligeiramente mais grossa para destaque */
-    border-left-style: solid;
+    text-decoration: none;
+    transition: 0.2s;
 }
 
-/* 3. BOTÃO COMPLEXO (Preto) */
+/* Estilo específico do COMPLEXO (Preto) */
 .separador-complexo-btn {
-    background: #333;
-    color: white;
-    justify-content: center;
+    background: #333 !important;
+    color: white !important;
+    justify-content: center !important;
     font-weight: bold;
     text-transform: uppercase;
-    border-left-color: #333; /* Cor igual ao fundo para manter a dimensão do btRes */
-    border-top: none;
-    border-right: none;
-    border-bottom: none;
+    border: none !important;
 }
 
-/* 4. BOTÃO RESIDENCIAL (Branco) */
+/* Estilo específico do RESIDENCIAL (Branco) */
 .btRes {
-    background: #fff;
-    border-left-color: var(--mrv-verde); 
-    justify-content: space-between;
-    text-align: left;
-    color: var(--texto-escuro);
+    background: #fff !important;
+    border-left: 5px solid var(--mrv-verde) !important;
+    justify-content: space-between !important;
+    color: #333;
 }
 
-/* Ajuste para o texto não sumir */
 .btRes strong { 
     white-space: nowrap; 
     overflow: hidden; 
@@ -78,40 +57,28 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     max-width: 60%; 
 }
 
-.badge-estoque { 
-    font-size: 0.65rem; 
-    font-weight: bold; 
-    white-space: nowrap; /* Impede que o "RESTAM UN" quebre */
-}
+.badge-estoque { font-size: 0.62rem; font-weight: bold; white-space: nowrap; }
 
-/* HOVERS E ATIVO */
-.btRes:hover { background: var(--mrv-verde-hover) !important; border-color: var(--mrv-verde); }
-.separador-complexo-btn:hover { background: #444; border-left-color: #444; }
+/* Hovers */
+.btRes:hover { background: #f0f7f0 !important; }
+.separador-complexo-btn:hover { background: #444 !important; }
 
+/* Estado Ativo (Laranja) */
 .btRes.ativo { 
     background: var(--mrv-laranja) !important; 
     color: white !important; 
-    border-color: #d67e00 !important;
+    border-color: #d67e00 !important; 
 }
 .btRes.ativo .badge-estoque { color: white !important; }
 
-/* CONTEÚDO CENTRAL */
-.conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; }
-#cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.72rem; color: #555; height: 30px; display: flex; align-items: center; justify-content: center; }
-#caixa-a { flex: 1.3; border-bottom: 2px solid #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px; }
-#caixa-b { flex: 0.45; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 5px; }
-
-/* MAPAS */
+/* Restante do Layout (Simplificado) */
+.wrapper { display: flex; flex: 1; overflow: hidden; }
+.conteudo-centro { flex: 1; display: flex; flex-direction: column; }
+#cidade-titulo { background: #eee; padding: 5px; text-align: center; font-size: 0.75rem; font-weight: bold; color: #555; }
+#caixa-a { flex: 1.5; border-bottom: 2px solid #eee; }
+#caixa-b { flex: 0.5; }
 svg { width: 100%; height: 100%; }
-path { fill: var(--cinza-mapa); stroke: #ffffff; stroke-width: 0.8; transition: 0.2s; pointer-events: all; }
-#caixa-a path.commrv { fill: var(--mrv-verde); cursor: pointer; }
-#caixa-a path:hover { fill: var(--mrv-laranja) !important; cursor: pointer; }
-path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1.8px !important; }
-
-/* SIDEBAR DIREITA */
-.sidebar-dir { width: 310px; border-left: 1px solid #ddd; overflow-y: auto; padding: 10px; flex-shrink: 0; }
-.vitrine-topo { background: var(--mrv-verde); color: white; padding: 5px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.75rem; }
-.ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 8px 0; }
-.info-box { background: #f2f2f2; padding: 6px; border-radius: 4px; border: 1px solid #e5e5e5; }
-.info-box label { display: block; font-size: 0.55rem; color: #777; font-weight: bold; text-transform: uppercase; }
-.info-box span { font-size: 0.75rem; font-weight: 600; }
+path { fill: #999; stroke: #fff; stroke-width: 0.8; cursor: pointer; }
+path.commrv { fill: var(--mrv-verde); }
+path.path-ativo { fill: var(--mrv-laranja) !important; }
+.sidebar-dir { width: 300px; border-left: 1px solid #ddd; padding: 10px; overflow-y: auto; flex-shrink: 0; }
