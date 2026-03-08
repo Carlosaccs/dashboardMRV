@@ -1,33 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard MRV SP</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE</div>
+<div class="wrapper">
+    <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
+    <main class="conteudo-centro">
+        <div id="cidade-titulo"></div> 
+        <div id="caixa-a"></div> 
+        <div id="caixa-b"></div> 
+    </main>
+    <aside class="sidebar-dir" id="ficha-tecnica"></aside>
+</div>
+
+<script src="mrv-data.js"></script>
+<script src="mrv-engine.js"></script>
 <script>
     function gerarListaLateral() {
         const list = document.getElementById('lista-imoveis');
         if (!list) return;
         list.innerHTML = "";
         
-        // ORDENAÇÃO MÁGICA: 
-        // 1. Primeiro pela coluna ORDEM (10, 20, 30...)
-        // 2. Em caso de empate na ordem, vai por Nome Alfabético
-        const listaOrdenada = [...DADOS_PLANILHA].sort((a, b) => {
-            if (a.ordem !== b.ordem) return a.ordem - b.ordem;
-            return a.nome.localeCompare(b.nome);
-        });
+        // Ordena apenas pela coluna ORDEM
+        const lista = [...DADOS_PLANILHA].sort((a, b) => a.ordem - b.ordem);
 
-        listaOrdenada.forEach(item => {
+        lista.forEach(item => {
             const btn = document.createElement('button');
             btn.className = 'btRes';
             btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            
-            // Se for COMPLEXO, ganha um ícone diferenciado
-            const prefixo = item.categoria === 'COMPLEXO' ? '🏢 ' : '';
-            
-            btn.innerHTML = `
-                <strong>${prefixo}${item.nome}</strong> 
-                ${obterHtmlEstoque(item.estoque, item.categoria)}
-            `;
-
+            btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.categoria)}`;
             btn.onclick = () => comandoSelecao(item.id_path, item.nomeFull, item);
             list.appendChild(btn);
         });
     }
     window.onload = iniciarApp;
 </script>
+</body>
+</html>
