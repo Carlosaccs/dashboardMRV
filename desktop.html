@@ -2,15 +2,15 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard MRV SP v6.9</title>
+    <title>Dashboard MRV SP v7.2</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v6.9</div>
+<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v7.2</div>
 
 <div class="wrapper">
-    <aside class="sidebar-esq" id="lista-imoveis">Carregando residenciais...</aside>
+    <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
     
     <main class="conteudo-centro">
         <div id="cidade-titulo"></div> 
@@ -34,21 +34,25 @@
         if (!list) return;
         list.innerHTML = "";
         
-        // Mantém a ordem da planilha (que já deve estar alfabética)
-        DADOS_PLANILHA.forEach(item => {
+        // 1. ORDENAÇÃO: Cidade Sete Sóis (Tipo N) sempre no topo, depois ordem alfabética
+        const itensSeteSois = DADOS_PLANILHA.filter(i => i.tipo === 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        const itensResidenciais = DADOS_PLANILHA.filter(i => i.tipo !== 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        
+        const listaFinal = [...itensSeteSois, ...itensResidenciais];
+
+        listaFinal.forEach(item => {
             const btn = document.createElement('button');
+            btn.className = 'btRes';
+            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
             
-            // Se for Tipo N, ganha um estilo de destaque preto, senão estilo padrão
+            // 2. CORREÇÃO DO CONTEÚDO DO BOTÃO:
+            // Forçamos o botão a usar apenas o NOME, evitando que a OBS (campo longo) entre aqui.
             if (item.tipo === 'N') {
-                btn.className = `btRes`;
-                btn.style = "background:#333 !important; color:white !important; border-left: 4px solid var(--mrv-laranja); margin-top:10px; margin-bottom:10px; font-weight:bold;";
-                btn.innerHTML = `<span>🏢 ${item.nome.toUpperCase()}</span>`;
+                btn.innerHTML = `<strong>🏢 ${item.nome.toUpperCase()}</strong> <span></span>`;
             } else {
-                btn.className = `btRes`;
                 btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
             }
 
-            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
             btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
             list.appendChild(btn);
         });
