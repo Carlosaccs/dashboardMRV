@@ -14,32 +14,28 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 .sidebar-esq { width: 25%; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px; background: #f8f9fa; }
 
-/* Botões 25% menores: padding reduzido de 8px para 5px e fonte para 0.68rem */
+/* COMPACTAÇÃO DE 25% AQUI */
 .btRes { 
     width: 100%; padding: 5px 8px; margin-bottom: 4px; background: #fff; 
     border: 1px solid #eee; border-left: 4px solid var(--mrv-verde); 
     text-align: left; cursor: pointer; border-radius: 4px;
     display: flex; justify-content: space-between; align-items: center; 
     font-size: 0.68rem; transition: 0.1s;
-    min-height: 32px;
+    min-height: 30px; /* Altura reduzida */
 }
 
 .btRes strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
 
-.btRes:hover { 
-    background: var(--mrv-verde-hover) !important; 
-    border-color: var(--mrv-verde);
-}
+.btRes:hover { background: var(--mrv-verde-hover) !important; border-color: var(--mrv-verde); }
 
-/* Estado Ativo: Unificado para todos (inclusive Tipo N) */
+/* DESTAQUE CLICADO (Conforme seu print laranja) */
 .btRes.ativo { 
     background: var(--mrv-laranja) !important; 
     color: white !important; 
     border: 1px solid #d67e00 !important;
     font-weight: bold; 
 }
-.btRes.ativo .badge-estoque { color: white !important; }
-.btRes.ativo span { color: white !important; }
+.btRes.ativo .badge-estoque, .btRes.ativo span { color: white !important; }
 
 .conteudo-centro { flex: 1; display: flex; flex-direction: column; }
 #cidade-titulo { background: #eee; padding: 5px; text-align: center; font-weight: bold; font-size: 0.7rem; color: #555; height: 30px; display: flex; align-items: center; justify-content: center; }
@@ -49,9 +45,7 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 svg { width: 100%; height: 100%; }
 path { fill: var(--cinza-mapa); stroke: #ffffff; stroke-width: 0.8; transition: 0.2s; pointer-events: all; }
-
 #caixa-a path.commrv { fill: var(--mrv-verde); cursor: pointer; }
-#caixa-a path:hover { fill: var(--mrv-laranja) !important; cursor: pointer; }
 path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1.8px !important; }
 
 .sidebar-dir { width: 30%; border-left: 1px solid #ddd; overflow-y: auto; padding: 12px; }
