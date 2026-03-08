@@ -3,24 +3,23 @@ let pathSelecionado = null;
 let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
-// AJUSTE AS COLUNAS AQUI DE ACORDO COM SUA PLANILHA REAL
-// Se a coluna A é 0, B é 1, C é 2...
+// MAPEAMENTO BASEADO NA SUA LISTA ATUAL
 const COL = {
-    ID: 0,        // Coluna A (ex: pirituba)
-    TIPO: 1,      // Coluna B (ex: R ou N)
-    NOME: 2,      // Coluna C (Nome Curto para os botões)
-    NOME_FULL: 3, // Coluna D (Nome Completo para a ficha)
-    ESTOQUE: 4,   // Coluna E
-    END: 5,       // Coluna F
-    BAIRRO: 6,    // Coluna G
-    CIDADE: 7,    // Coluna H
-    ENTREGA: 8,   // Coluna I
-    PRECO: 9,     // Coluna J
-    P_DE: 10,     // Coluna K
-    P_ATE: 11,    // Coluna L
-    OBRA: 12,     // Coluna M
-    DICA: 13,     // Coluna N
-    BK_CLI: 19    // Coluna T (Ajuste se for outra)
+    ID: 0,          // ID_PATH
+    TIPO: 1,        // CATEGORIA (R ou COMPLEXO)
+    ORDEM: 2,       // ORDEM
+    NOME: 3,        // NOME_CURTO (Para os botões)
+    NOME_FULL: 4,   // NOME_FULL (Para o título da ficha)
+    ESTOQUE: 5,     // ESTOQUE
+    END: 6,         // ENDERECO
+    PRECO: 7,       // PRECO
+    ENTREGA: 8,     // ENTREGA
+    P_DE: 9,        // PLANTAS_DE
+    P_ATE: 10,      // PLANTAS_ATE
+    OBRA: 11,       // STATUS_OBRA
+    DICA: 12,       // DICA_CURTA
+    DESC: 13,       // DESCRICAO_LONGA
+    BOOK: 20        // BOOK_CLIENTE (Coluna U)
 };
 
 async function iniciarApp() { await carregarPlanilha(); }
@@ -32,60 +31,51 @@ async function carregarPlanilha() {
     try {
         const response = await fetch(`${URL_CSV}&v=${new Date().getTime()}`);
         const texto = await response.text();
-        // Divide as linhas corretamente
         const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            // Regex para não quebrar em vírgulas dentro de aspas
             const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
-            
             return {
                 id_path: c[COL.ID]?.toLowerCase(),
-                tipo: c[COL.TIPO] || "R",
+                tipo: c[COL.TIPO] === 'COMPLEXO' ? 'N' : 'R', // Mantendo sua lógica de 'N' para separador
+                ordem: parseInt(c[COL.ORDEM]) || 999,
                 nome: c[COL.NOME],
-                nomeExibicao: c[COL.NOME_FULL] || c[COL.NOME], // Usa o nome completo na ficha
+                nomeFull: c[COL.NOME_FULL],
                 estoque: c[COL.ESTOQUE],
                 endereco: c[COL.END],
-                bairro: c[COL.BAIRRO],
-                cidade: c[COL.CIDADE],
-                entrega: c[COL.ENTREGA],
                 preco: c[COL.PRECO],
+                entrega: c[COL.ENTREGA],
                 plantas: `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}`,
                 obra: c[COL.OBRA],
                 dica: c[COL.DICA],
-                book: limparLinkDrive(c[COL.BK_CLI])
+                desc: c[COL.DESC],
+                book: limparLinkDrive(c[COL.BOOK])
             };
         }).filter(i => i.nome);
+
+        // Ordena pela coluna ORDEM antes de gerar a lista
+        DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
 
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
     } catch (e) { console.error("Erro:", e); }
 }
 
-// MANTENHA TODAS AS SUAS FUNÇÕES ORIGINAIS DE MAPA ABAIXO (desenharMapas, renderizarNoContainer, etc.)
-// Elas estão corretas nos seus códigos anteriores.
-
-function obterHtmlEstoque(valor, tipo) {
-    if (tipo === 'N') return "";
-    if (!valor || valor.trim() === "" || valor === "0") return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
-    const n = parseInt(valor);
-    if (valor.toUpperCase() === "VENDIDO" || n === 0) return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
-    if (n < 6) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${valor} UN!</span>`;
-    return `<span class="badge-estoque">RESTAM ${valor} UN.</span>`;
-}
+// MANTENHA SUAS FUNÇÕES ORIGINAIS DE MAPA (desenharMapas, renderizarNoContainer, etc.) IGUAIS
+// Pois você confirmou que os mapas estão funcionando perfeitamente.
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome && i.tipo !== 'N');
     
+    // CORREÇÃO DO DESTAQUE: Limpa e aplica a classe 'ativo'
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    // Busca o botão pelo ID sanitizado
     const idBotao = `btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
     const btnEsq = document.getElementById(idBotao);
     if (btnEsq) btnEsq.classList.add('ativo');
 
     painel.innerHTML = `
-        <div class="vitrine-topo">${selecionado.nomeExibicao}</div>
+        <div class="vitrine-topo">${selecionado.nomeFull || selecionado.nome}</div>
         <div style="margin-bottom:15px;">
             ${outros.map(o => `<button class="btRes" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong>${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
         </div>
@@ -107,4 +97,5 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
             <a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Book Cliente</a>
         </div>`;
 }
-// Restante das funções (cliqueNoMapa, comandoSelecao, etc.) permanecem iguais ao seu original.
+
+// MANTENHA AS DEMAIS FUNÇÕES (navegarVitrine, trocarMapas, etc.) COMO ESTÃO.
