@@ -2,19 +2,28 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard MRV SP</title>
+    <title>Dashboard MRV SP v7.1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE</div>
+
+<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v7.1</div>
+
 <div class="wrapper">
     <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
+    
     <main class="conteudo-centro">
         <div id="cidade-titulo"></div> 
         <div id="caixa-a"></div> 
         <div id="caixa-b"></div> 
     </main>
-    <aside class="sidebar-dir" id="ficha-tecnica"></aside>
+
+    <aside class="sidebar-dir" id="ficha-tecnica">
+        <div style="text-align:center; color:#ccc; margin-top:100px;">
+            <p style="font-size: 30px;">📍</p>
+            <p>Selecione um complexo ou residencial.</p>
+        </div>
+    </aside>
 </div>
 
 <script src="mrv-data.js"></script>
@@ -25,15 +34,25 @@
         if (!list) return;
         list.innerHTML = "";
         
-        // Ordena apenas pela coluna ORDEM
-        const lista = [...DADOS_PLANILHA].sort((a, b) => a.ordem - b.ordem);
+        // Separação limpa para manter o Cidade Sete Sóis no topo
+        const tipoN = DADOS_PLANILHA.filter(i => i.tipo === 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        const tipoR = DADOS_PLANILHA.filter(i => i.tipo !== 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        
+        const final = [...tipoN, ...tipoR];
 
-        lista.forEach(item => {
+        final.forEach(item => {
             const btn = document.createElement('button');
             btn.className = 'btRes';
             btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.categoria)}`;
-            btn.onclick = () => comandoSelecao(item.id_path, item.nomeFull, item);
+            
+            // Layout do botão unificado
+            if (item.tipo === 'N') {
+                btn.innerHTML = `<strong>🏢 ${item.nome.toUpperCase()}</strong> <span></span>`;
+            } else {
+                btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+            }
+
+            btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
             list.appendChild(btn);
         });
     }
