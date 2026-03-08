@@ -3,21 +3,22 @@ let pathSelecionado = null;
 let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
+// MAPEAMENTO RÍGIDO (A=0, B=1, C=2, D=3...)
 const COL = {
-    ID: 0,          // A: ID_PATH
-    TIPO: 1,        // B: CATEGORIA
-    ORDEM: 2,       // C: ORDEM
-    NOME: 3,        // D: NOME_CURTO
-    NOME_FULL: 4,   // E: NOME_FULL
-    ESTOQUE: 5,     // F: ESTOQUE
-    END: 6,         // G: ENDERECO
-    PRECO: 7,       // H: PRECO
-    ENTREGA: 8,     // I: ENTREGA
-    P_DE: 9,        // J: PLANTAS_DE
-    P_ATE: 10,      // K: PLANTAS_ATE
-    OBRA: 11,       // L: STATUS_OBRA
-    DICA: 12,       // M: DICA_CURTA
-    BK_CLI: 20      // U: BOOK_CLIENTE
+    ID: 0,          // ID_PATH
+    TIPO: 1,        // CATEGORIA
+    ORDEM: 2,       // ORDEM
+    NOME: 3,        // NOME_CURTO (Coluna D)
+    NOME_FULL: 4,   // NOME_FULL (Coluna E)
+    ESTOQUE: 5,     // ESTOQUE (Coluna F)
+    END: 6,         // ENDERECO (Coluna G)
+    PRECO: 7,       // PRECO (Coluna H)
+    ENTREGA: 8,     // ENTREGA (Coluna I)
+    P_DE: 9,        // PLANTAS_DE (Coluna J)
+    P_ATE: 10,      // PLANTAS_ATE (Coluna K)
+    OBRA: 11,       // STATUS_OBRA (Coluna L)
+    DICA: 12,       // DICA_CURTA (Coluna M)
+    BK_CLI: 20      // BOOK_CLIENTE (Coluna U)
 };
 
 async function iniciarApp() {
@@ -34,37 +35,46 @@ async function carregarPlanilha() {
         const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+            // REGEX AVANÇADA: Garante que vírgulas dentro de aspas não quebrem a contagem das colunas
+            const c = linha.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+            const colunas = c.map(v => v.trim().replace(/^"|"$/g, ''));
+            
+            // Validação: Se a coluna de nome (3) parece um texto de descrição (muito longo), 
+            // algo deu errado no split desta linha específica.
+            const nomeBruto = colunas[COL.NOME] || "";
+            
             return {
-                id_path: c[COL.ID]?.toLowerCase() || "",
-                tipo: (c[COL.TIPO] === 'COMPLEXO' || c[COL.TIPO] === 'N') ? 'N' : 'R',
-                ordem: parseInt(c[COL.ORDEM]) || 999,
-                nome: c[COL.NOME] || "",
-                nomeFull: c[COL.NOME_FULL] || c[COL.NOME],
-                estoque: c[COL.ESTOQUE] || "",
-                endereco: c[COL.END] || "",
-                cidade: c[COL.ID] ? c[COL.ID].toUpperCase() : "", 
-                entrega: c[COL.ENTREGA] || "",
-                preco: c[COL.PRECO] || "",
-                plantas: (c[COL.P_DE] || c[COL.P_ATE]) ? `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}` : "Consulte",
-                obra: c[COL.OBRA] || "0",
-                dica: c[COL.DICA] || "",
-                book: limparLinkDrive(c[COL.BK_CLI] || "")
+                id_path: colunas[COL.ID]?.toLowerCase() || "",
+                tipo: (colunas[COL.TIPO] === 'COMPLEXO' || colunas[COL.TIPO] === 'N') ? 'N' : 'R',
+                ordem: parseInt(colunas[COL.ORDEM]) || 999,
+                nome: nomeBruto.length > 40 ? "Erro na Linha" : nomeBruto, // Trava de segurança
+                nomeFull: colunas[COL.NOME_FULL] || nomeBruto,
+                estoque: colunas[COL.ESTOQUE] || "",
+                endereco: colunas[COL.END] || "",
+                cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "", 
+                entrega: colunas[COL.ENTREGA] || "",
+                preco: colunas[COL.PRECO] || "",
+                plantas: (colunas[COL.P_DE] || colunas[COL.P_ATE]) ? `De ${colunas[COL.P_DE]} a ${colunas[COL.P_ATE]}` : "Consulte",
+                obra: colunas[COL.OBRA] || "0",
+                dica: colunas[COL.DICA] || "",
+                book: limparLinkDrive(colunas[COL.BK_CLI] || "")
             };
-        }).filter(i => i.id_path !== "");
+        }).filter(i => i.id_path !== "" && i.nome !== "Erro na Linha");
 
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
 
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
-    } catch (e) { console.error("Erro:", e); }
+    } catch (e) { console.error("Erro no processamento:", e); }
 }
 
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
     const cleanVal = valor ? valor.toString().toUpperCase().trim() : "";
-    if (cleanVal === "" || cleanVal === "NULL") return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
-    if (cleanVal === "VENDIDO" || cleanVal === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
+    if (cleanVal === "" || cleanVal === "NULL" || cleanVal === "CONSULTAR") 
+        return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
+    if (cleanVal === "VENDIDO" || cleanVal === "0") 
+        return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
     
     const n = parseInt(valor);
     if (!isNaN(n)) {
@@ -74,7 +84,6 @@ function obterHtmlEstoque(valor, tipo) {
     return `<span class="badge-estoque">${valor}</span>`;
 }
 
-// Funções de Mapa e Vitrine permanecem as mesmas (conforme mestre v6.8)
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     if (!container) return;
