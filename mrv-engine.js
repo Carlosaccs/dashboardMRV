@@ -48,7 +48,6 @@ async function carregarPlanilha() {
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
     if (!valor || valor.trim() === "") return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
-    
     const n = parseInt(valor);
     if (valor.toUpperCase() === "VENDIDO" || n === 0) return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
     if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${valor} UN!</span>`;
@@ -83,12 +82,10 @@ function cliqueNoMapa(id, nome, temMRV) { if (!temMRV) return; nomeSelecionado =
 function comandoSelecao(idPath, nomePath, fonte) {
     const estaNoGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase() === idPath.toLowerCase());
     const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase() === idPath.toLowerCase());
-    
     if ((estaNoGSP && mapaAtivo !== 'GSP') || (estaNoInterior && mapaAtivo !== 'INTERIOR')) {
         mapaAtivo = estaNoGSP ? 'GSP' : 'INTERIOR';
         desenharMapas();
     }
-
     setTimeout(() => {
         const el = document.getElementById(`caixa-a-${idPath}`);
         if (el) {
@@ -100,71 +97,55 @@ function comandoSelecao(idPath, nomePath, fonte) {
 
     nomeSelecionado = nomePath;
     document.getElementById('cidade-titulo').innerText = nomePath;
-    
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase());
-    
     if (imoveis.length > 0) {
-        // Se a fonte do clique for um objeto de dados (vindo da lista lateral)
         let selecionado = (fonte && fonte.nome) ? fonte : null;
-        
-        // Se não tiver um selecionado específico (clique no mapa), pega o primeiro Tipo N ou o primeiro Residencial
         if (!selecionado) {
             selecionado = imoveis.find(i => i.tipo === 'N') || imoveis.sort((a,b) => a.nome.localeCompare(b.nome))[0];
         }
-        
         montarVitrine(selecionado, imoveis, nomePath);
     }
 }
 
 function trocarMapas() { mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; limparSelecao(); desenharMapas(); }
-
 function limparSelecao() {
     pathSelecionado = null; nomeSelecionado = "";
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
     document.getElementById('cidade-titulo').innerText = "";
-    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size:30px;">📍</p><p>Selecione um empreendimento</p></div>`;
+    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size:30px;">📍</p><p>Selecione um item</p></div>`;
 }
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
-    
-    // Filtra os outros itens (exclui o que está aberto agora)
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
     const btnEsq = document.getElementById(`btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`);
     if (btnEsq) btnEsq.classList.add('ativo');
 
-    // Cabeçalho da Vitrine
     let htmlVitrine = `<div class="vitrine-topo">MRV em ${nomeRegiao}</div>`;
-    
-    // Lista de Botões de Navegação na Vitrine
-    htmlVitrine += `<div style="margin-bottom:15px;">
+    htmlVitrine += `<div style="margin-bottom:12px;">
         ${outros.map(o => `<button class="btRes" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong>${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
     </div>`;
 
-    // Conteúdo Principal (O que muda se for Tipo N ou R)
     if (selecionado.tipo === 'N') {
-        // VISUAL PARA CONJUNTO/CIDADE (TIPO N)
         htmlVitrine += `
-            <div style="border-top:1px solid #eee; padding-top:15px;">
+            <div style="border-top:1px solid #eee; padding-top:12px;">
                 <div class="btRes ativo" style="cursor:default; margin-bottom:10px;">
                     <strong>${selecionado.nome}</strong>
                 </div>
-                <div class="info-box" style="background:#fff; margin-top:10px; border: 1px solid #ddd; line-height: 1.6;">
-                    <label style="color:var(--mrv-verde); margin-bottom:10px; font-size:0.7rem;">SOBRE O COMPLEXO</label>
-                    <p style="font-size:0.85rem; color:#444; text-align:justify;">${selecionado.dica || "Informações sobre este complexo em breve."}</p>
+                <div class="info-box" style="background:#fff; margin-top:10px; border: 1px solid #ddd; line-height: 1.5;">
+                    <label style="color:var(--mrv-verde); margin-bottom:8px; font-size:0.65rem;">SOBRE O COMPLEXO</label>
+                    <p style="font-size:0.75rem; color:#444; text-align:justify;">${selecionado.dica || "Informações em breve."}</p>
                 </div>
-                ${selecionado.book ? `<a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Ver Apresentação do Complexo</a>` : ""}
+                ${selecionado.book ? `<a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Ver Apresentação</a>` : ""}
             </div>`;
     } else {
-        // VISUAL PARA RESIDENCIAL COMUM (TIPO R)
         htmlVitrine += `
-            <div style="border-top:1px solid #eee; padding-top:15px;">
+            <div style="border-top:1px solid #eee; padding-top:12px;">
                 <div class="btRes ativo" style="cursor:default; margin-bottom:10px;">
                     <strong>${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}
                 </div>
-                <p style="font-size:0.7rem; color:#666; margin-bottom:10px;">📍 ${selecionado.endereco}</p>
+                <p style="font-size:0.65rem; color:#666; margin-bottom:8px;">📍 ${selecionado.endereco}</p>
                 <div class="ficha-grid">
                     <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
                     <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
@@ -173,12 +154,11 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                 </div>
                 <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 3px solid var(--mrv-laranja);">
                     <label style="color:#d67e00;">💡 Dica do Corretor</label>
-                    <p style="font-size:0.75rem;">${selecionado.dica}</p>
+                    <p style="font-size:0.7rem;">${selecionado.dica}</p>
                 </div>
                 <a href="${selecionado.book}" target="_blank" class="btRes" style="background:var(--mrv-verde); color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Book Cliente</a>
             </div>`;
     }
-
     painel.innerHTML = htmlVitrine;
 }
 
