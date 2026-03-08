@@ -2,12 +2,12 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard MRV SP v7.0</title>
+    <title>Dashboard MRV SP v7.1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v7.0</div>
+<div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v7.1</div>
 
 <div class="wrapper">
     <aside class="sidebar-esq" id="lista-imoveis">Carregando...</aside>
@@ -34,25 +34,24 @@
         if (!list) return;
         list.innerHTML = "";
         
-        // 1. SEPARAÇÃO E ORDENAÇÃO:
-        // Primeiro colocamos os itens de "Tipo N" no topo.
-        const itensN = DADOS_PLANILHA.filter(i => i.tipo === 'N').sort((a,b) => a.nome.localeCompare(b.nome));
-        const itensR = DADOS_PLANILHA.filter(i => i.tipo !== 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        // Separação limpa para manter o Cidade Sete Sóis no topo
+        const tipoN = DADOS_PLANILHA.filter(i => i.tipo === 'N').sort((a,b) => a.nome.localeCompare(b.nome));
+        const tipoR = DADOS_PLANILHA.filter(i => i.tipo !== 'N').sort((a,b) => a.nome.localeCompare(b.nome));
         
-        const listaOrdenada = [...itensN, ...itensR];
+        const final = [...tipoN, ...tipoR];
 
-        listaOrdenada.forEach(item => {
+        final.forEach(item => {
             const btn = document.createElement('button');
-            btn.className = `btRes`;
+            btn.className = 'btRes';
+            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
             
+            // Layout do botão unificado
             if (item.tipo === 'N') {
-                // Estilo "Super Botão" mas com cores padrão para aceitar o ativo laranja
-                btn.innerHTML = `<span style="color:var(--mrv-verde); font-weight:bold;">🏢 ${item.nome.toUpperCase()}</span>`;
+                btn.innerHTML = `<strong>🏢 ${item.nome.toUpperCase()}</strong> <span></span>`;
             } else {
                 btn.innerHTML = `<strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
             }
 
-            btn.id = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
             btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
             list.appendChild(btn);
         });
