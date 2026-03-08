@@ -9,7 +9,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; }
 
-/* Header levemente mais fino */
+/* Header */
 .header { 
     background: var(--mrv-verde); 
     color: white; 
@@ -21,13 +21,40 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 .wrapper { display: flex; flex: 1; overflow: hidden; }
 
-.sidebar-esq { width: 25%; border-right: 1px solid #ddd; overflow-y: auto; padding: 8px; background: #f8f9fa; }
+/* Barra Lateral Esquerda */
+.sidebar-esq { 
+    width: 25%; 
+    border-right: 1px solid #ddd; 
+    overflow-y: auto; 
+    padding: 10px 0; /* Padding apenas no topo e base */
+    background: #f8f9fa; 
+}
 
-/* COMPACTAÇÃO DE 25%: Padding reduzido de 8px para 4px e altura mínima definida */
+/* BOTÃO DE COMPLEXO (Títulos Escuros) */
+.separador-complexo-btn {
+    width: 80%; /* Reduzido em 20% */
+    padding: 5px 8px;
+    margin: 4px auto; /* CENTRALIZADO e com margem igual aos outros */
+    background: #333;
+    color: white;
+    font-size: 0.68rem;
+    text-align: center;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    display: block;
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+.separador-complexo-btn:hover { background: #444; transform: scale(1.02); }
+
+/* BOTÃO DE RESIDENCIAL (btRes) */
 .btRes { 
-    width: 100%; 
+    width: 80%; /* Reduzido em 20% */
     padding: 4px 8px; 
-    margin-bottom: 3px; 
+    margin: 4px auto; /* CENTRALIZADO e com margem idêntica ao complexo */
     background: #fff; 
     border: 1px solid #eee; 
     border-left: 4px solid var(--mrv-verde); 
@@ -37,24 +64,25 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    font-size: 0.68rem; /* Fonte ligeiramente menor para não quebrar a linha */
+    font-size: 0.68rem;
     transition: 0.1s;
-    min-height: 28px; /* Força a compactação */
+    min-height: 28px;
 }
 
 .btRes strong { 
     white-space: nowrap; 
     overflow: hidden; 
     text-overflow: ellipsis; 
-    max-width: 70%; 
+    max-width: 65%; /* Garante que o nome não empurre o estoque */
 }
 
 .btRes:hover { 
     background: var(--mrv-verde-hover) !important; 
     border-color: var(--mrv-verde);
+    transform: scale(1.02);
 }
 
-/* O Estilo Laranja do seu outro Dashboard */
+/* Estado Ativo (Laranja) */
 .btRes.ativo { 
     background: var(--mrv-laranja) !important; 
     color: white !important; 
@@ -63,9 +91,9 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 }
 .btRes.ativo .badge-estoque { color: white !important; }
 
+/* Conteúdo Central */
 .conteudo-centro { flex: 1; display: flex; flex-direction: column; }
 
-/* Faixa da Cidade compactada */
 #cidade-titulo { 
     background: #eee; 
     padding: 4px; 
@@ -89,7 +117,7 @@ path { fill: var(--cinza-mapa); stroke: #ffffff; stroke-width: 0.8; transition: 
 #caixa-a path:hover { fill: var(--mrv-laranja) !important; cursor: pointer; }
 path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1.8px !important; }
 
-/* Sidebar da Direita Compactada */
+/* Barra Direita */
 .sidebar-dir { width: 30%; border-left: 1px solid #ddd; overflow-y: auto; padding: 10px; }
 
 .vitrine-topo { 
