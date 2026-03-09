@@ -13,7 +13,7 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 .header { background: var(--mrv-verde); color: white; padding: 6px; text-align: center; font-weight: bold; font-size: 0.85rem; }
 .wrapper { display: flex; flex: 1; overflow: hidden; }
 
-/* 1. BARRA ESQUERDA (Travada em 280px) */
+/* 1. BARRA ESQUERDA (280px) */
 .sidebar-esq { 
     width: 280px; 
     border-right: 1px solid #ddd; 
@@ -23,7 +23,7 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     flex-shrink: 0; 
 }
 
-/* REGRA DE OURO: COMPLEXO e btRes IGUAIS */
+/* REGRA DE OURO: COMPLEXO e btRes UNIFICADOS */
 .separador-complexo-btn, .btRes {
     width: 92% !important;
     margin: 3px auto !important;
@@ -38,13 +38,15 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     border: 1px solid #ddd;
 }
 
+/* Ajuste específico para o Separador Escuro (Centralizado) */
 .separador-complexo-btn {
     background: #333 !important;
     color: white !important;
-    justify-content: center;
+    justify-content: center !important; /* Centraliza o texto */
     font-weight: bold;
     text-transform: uppercase;
     border: none !important;
+    cursor: default; /* Remove o cursor de clique quando for apenas título */
 }
 
 .btRes {
@@ -54,14 +56,13 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     color: var(--texto-escuro);
 }
 
-/* Hover do Residencial com destaque na borda verde */
+/* Hovers e Estados Ativos */
 .btRes:hover { 
     background: var(--mrv-verde-hover) !important; 
     border-color: var(--mrv-verde) !important; 
     border-left-width: 6px !important; 
 }
 
-/* Destaque Laranja quando selecionado */
 .btRes.ativo { 
     background: var(--mrv-laranja) !important; 
     color: white !important; 
@@ -80,7 +81,6 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
 
-/* Cores dos Estados/Cidades nos Mapas */
 path { 
     fill: var(--cinza-mapa) !important; 
     stroke: #ffffff; 
@@ -89,30 +89,24 @@ path {
     pointer-events: all; 
 }
 
-/* Hover nos paths Cinzas (Ficam mais claros) */
 path:hover { fill: var(--cinza-hover) !important; }
 
-/* Áreas com presença MRV (Verdes) */
 path.commrv { fill: var(--mrv-verde) !important; cursor: pointer; }
 path.commrv:hover { fill: var(--mrv-laranja) !important; }
 
-/* REGRA CRÍTICA: ID Grande SP no Mapa do Estado */
 #grandesaopaulo { 
     fill: var(--mrv-verde) !important; 
     cursor: pointer !important; 
 }
-#grandesaopaulo:hover { 
-    fill: var(--mrv-laranja) !important; 
-}
+#grandesaopaulo:hover { fill: var(--mrv-laranja) !important; }
 
-/* Destaque do path CLICADO (Laranja com borda preta) */
 path.path-ativo { 
     fill: var(--mrv-laranja) !important; 
     stroke: #000 !important; 
     stroke-width: 1.5px !important; 
 }
 
-/* 3. SIDEBAR DIREITA (Alargada em 50% = 480px) */
+/* 3. SIDEBAR DIREITA (480px) */
 .sidebar-dir { 
     width: 480px; 
     border-left: 1px solid #ddd; 
@@ -121,8 +115,24 @@ path.path-ativo {
     flex-shrink: 0; 
 }
 
-.vitrine-topo { background: var(--mrv-verde); color: white; padding: 5px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.7rem; }
+.vitrine-topo { 
+    background: var(--mrv-verde); 
+    color: white; 
+    padding: 8px; 
+    text-align: center; 
+    font-weight: bold; 
+    border-radius: 4px; 
+    margin-bottom: 10px; 
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
 .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 8px 0; }
 .info-box { background: #f2f2f2; padding: 5px; border-radius: 4px; border: 1px solid #e5e5e5; }
 .info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; }
 .info-box span { font-size: 0.72rem; font-weight: 600; }
+
+/* Estilo para links e botões de ação na vitrine */
+.sidebar-dir .btRes {
+    width: 100% !important; /* Na direita eles ocupam a largura total da caixa */
+}
