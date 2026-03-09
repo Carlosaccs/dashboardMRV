@@ -3,12 +3,12 @@ let pathSelecionado = null;
 let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
+// Mapeamento atualizado conforme sua nova planilha
 const COL = {
-    ID: 0, TIPO: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
+    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
     ESTOQUE: 5, END: 6, PRECO: 7, ENTREGA: 8, 
-    P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, 
-    DESC_LONGA: 13, 
-    BK_CLI: 20
+    P_DE: 9, P_ATE: 10, OBRA: 11, DOCUMENTOS: 12, DICA: 13, 
+    DESC_LONGA: 14, BK_CLI: 21
 };
 
 async function iniciarApp() {
@@ -67,7 +67,7 @@ async function carregarPlanilha() {
 
             return {
                 id_path: idLimpo,
-                tipo: (colunas[COL.TIPO] === 'COMPLEXO' || colunas[COL.TIPO] === 'N') ? 'N' : 'R',
+                tipo: (colunas[COL.CATEGORIA] === 'COMPLEXO' || colunas[COL.CATEGORIA] === 'N') ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
                 nome: colunas[COL.NOME] || "",
                 nomeFull: colunas[COL.NOME_FULL] || colunas[COL.NOME],
@@ -78,6 +78,7 @@ async function carregarPlanilha() {
                 preco: colunas[COL.PRECO] || "",
                 plantas: (colunas[COL.P_DE] || colunas[COL.P_ATE]) ? `De ${colunas[COL.P_DE]} a ${colunas[COL.P_ATE]}` : "Consulte",
                 obra: colunas[COL.OBRA] || "0",
+                documentos: colunas[COL.DOCUMENTOS] || "",
                 dica: colunas[COL.DICA] || "",
                 descLonga: colunas[COL.DESC_LONGA] || "",
                 book: limparLinkDrive(colunas[COL.BK_CLI] || "")
@@ -138,11 +139,6 @@ function comandoSelecao(idPath, nomePath, fonte) {
     
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
-        
-        const gspCheck = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-        if (gspCheck && mapaAtivo !== 'GSP') { mapaAtivo = 'GSP'; desenharMapas(); }
-        else if (!gspCheck && mapaAtivo !== 'INTERIOR') { mapaAtivo = 'INTERIOR'; desenharMapas(); }
-
         nomeSelecionado = nomePath;
         const titulo = document.getElementById('cidade-titulo');
         if (titulo) titulo.innerText = nomePath;
@@ -159,69 +155,48 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     if (!painel) return;
 
-    // Sincroniza destaque na esquerda
-    document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(b => b.classList.remove('ativo'));
-    const idLimpoParaEsq = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
-    const btnEsq = document.getElementById(`btn-esq-${idLimpoParaEsq}`);
-    if (btnEsq) btnEsq.classList.add('ativo');
-
-    // Filtra para mostrar na lista apenas quem NÃO é o selecionado
     const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-
     const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
 
     let html = `
-        <div class="vitrine-topo notranslate">MRV EM ${nomeRegiao.toUpperCase()}</div>
-        <div style="margin-bottom:15px;">
+        <div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div>
+        <div style="margin-bottom:10px;">
+            ${listaSuperior.map(item => {
+                if (item.tipo === 'N') return `<button class="separador-complexo-btn" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')">${item.nome.toUpperCase()}</button>`;
+                return `<button class="btRes" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}</button>`;
+            }).join('')}
+        </div>
     `;
 
-    // 1. RENDERIZA LISTA SUPERIOR (Apenas botões não-selecionados)
-    listaSuperior.forEach(item => {
-        if (item.tipo === 'N') {
-            html += `<button class="separador-complexo-btn notranslate" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')">${item.nome.toUpperCase()}</button>`;
-        } else {
-            html += `<button class="btRes notranslate" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}</button>`;
-        }
-    });
-    
-    html += `</div>`;
-
-    // 2. ITEM SELECIONADO (O que "desceu" e agora fica em destaque laranja)
+    // Item em Destaque (Laranja)
     if (selecionado.tipo === 'N') {
-        html += `<div class="separador-complexo-btn notranslate ativo">${selecionado.nome.toUpperCase()}</div>`;
+        html += `<div class="separador-complexo-btn ativo">${selecionado.nome.toUpperCase()}</div>`;
     } else {
-        html += `<button class="btRes notranslate ativo"><strong class="notranslate">${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}</button>`;
+        html += `<button class="btRes ativo"><strong>${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}</button>`;
     }
 
-    // 3. CONTEÚDO DE DETALHES
     html += `
-        <div style="padding-top:10px;">
-            <p style="font-size:0.75rem; color:#444; margin-bottom:12px; font-weight:500; display: flex; align-items: center; justify-content: space-between;">
+        <div style="padding-top:8px;">
+            <p style="font-size:0.68rem; color:#444; margin-bottom:8px; font-weight:500; display: flex; align-items: center; justify-content: space-between;">
                 <span>📍 ${selecionado.endereco}</span>
-                <a href="${urlMaps}" target="_blank" class="btn-maps">🗺️ Abrir Maps</a>
+                <a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a>
             </p>
     `;
 
     if (selecionado.tipo === 'N') {
-        const textoProcessado = selecionado.descLonga
-            .split('\n')
-            .filter(p => p.trim() !== '')
-            .map(p => `<p>${p.trim()}</p>`)
-            .join('');
+        const textoProcessado = selecionado.descLonga.split('\n').filter(p => p.trim() !== '').map(p => `<p>${p.trim()}</p>`).join('');
         html += `<div class="desc-longa-texto">${textoProcessado || "Descrição em breve."}</div>`;
     } else {
         html += `
             <div class="ficha-grid">
-                <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
-                <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
-                <div class="info-box"><label>📐 Plantas</label><span>${selecionado.plantas}</span></div>
-                <div class="info-box"><label>🏗️ Obra</label><span>${selecionado.obra}%</span></div>
+                <div class="info-box"><label>Menor Preço</label><span>${selecionado.preco}</span></div>
+                <div class="info-box"><label>Entrega</label><span>${selecionado.entrega}</span></div>
+                <div class="info-box"><label>Plantas</label><span>${selecionado.plantas}</span></div>
+                <div class="info-box"><label>Obra</label><span>${selecionado.obra}%</span></div>
+                ${selecionado.documentos ? `<div class="box-documentos"><span>${selecionado.documentos}</span></div>` : ''}
             </div>
-            <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 3px solid #f37021;">
-                <label style="color:#d67e00;">💡 Dica do Corretor</label>
-                <p style="font-size:0.75rem;">${selecionado.dica}</p>
-            </div>
-            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none; width:100% !important;">📄 Book Cliente</a>
+            ${selecionado.dica ? `<div class="box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}
+            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important;">📄 BOOK CLIENTE</a>
         `;
     }
 
@@ -236,15 +211,8 @@ function navegarVitrine(nome, nomeRegiao) {
     montarVitrine(imovel, lista, nomeRegiao);
 }
 
-function hoverNoMapa(nome) { 
-    const t = document.getElementById('cidade-titulo');
-    if (t) t.innerText = nome; 
-}
-
-function resetTitulo() { 
-    const t = document.getElementById('cidade-titulo');
-    if (t) t.innerText = nomeSelecionado || "Selecione uma região"; 
-}
+function hoverNoMapa(nome) { document.getElementById('cidade-titulo').innerText = nome; }
+function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "Selecione uma região"; }
 
 function trocarMapas() { 
     mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
@@ -254,17 +222,14 @@ function trocarMapas() {
 
 function limparSelecao() {
     pathSelecionado = null; nomeSelecionado = "";
-    const t = document.getElementById('cidade-titulo');
-    if (t) t.innerText = "Selecione uma região";
-    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    const p = document.getElementById('ficha-tecnica');
-    if (p) p.innerHTML = '<div class="vitrine-topo">Aguardando Seleção</div>';
+    document.getElementById('cidade-titulo').innerText = "Selecione uma região";
+    document.getElementById('ficha-tecnica').innerHTML = '<div class="vitrine-topo">Aguardando Seleção</div>';
 }
 
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
     const clean = valor ? valor.toString().toUpperCase().trim() : "";
-    if (clean === "" || clean === "NULL" || clean.length > 15) return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
+    if (clean === "" || clean === "NULL") return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
     if (clean === "VENDIDO" || clean === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
     const n = parseInt(valor);
     if (!isNaN(n)) {
