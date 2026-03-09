@@ -78,7 +78,7 @@ function renderizarNoContainer(id, dados, interativo) {
         let acaoClique = "";
         if (interativo) {
             if (isGrandeSP) {
-                acaoClique = `onclick="trocarMapas()"`;
+                acaoClique = `onclick="trocarMapas()"` ;
             } else {
                 acaoClique = `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
             }
@@ -117,6 +117,19 @@ function comandoSelecao(idPath, nomePath, fonte) {
     
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
+        
+        // --- LÓGICA DE TROCA DE MAPA AUTOMÁTICA ---
+        const estaNaGrandeSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+        
+        if (estaNaGrandeSP && mapaAtivo !== 'GSP') {
+            mapaAtivo = 'GSP';
+            desenharMapas();
+        } else if (!estaNaGrandeSP && mapaAtivo !== 'INTERIOR') {
+            mapaAtivo = 'INTERIOR';
+            desenharMapas();
+        }
+        // ------------------------------------------
+
         nomeSelecionado = nomePath;
         const titulo = document.getElementById('cidade-titulo');
         if (titulo) titulo.innerText = nomePath;
@@ -146,7 +159,12 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     painel.innerHTML = `
         <div class="vitrine-topo notranslate">MRV EM ${nomeRegiao.toUpperCase()}</div>
         <div style="margin-bottom:15px;">
-            ${outros.map(o => `<button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong class="notranslate">${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
+            ${outros.map(o => `
+                <button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')">
+                    <strong class="notranslate">${o.nome}</strong> 
+                    ${obterHtmlEstoque(o.estoque, o.tipo)}
+                </button>
+            `).join('')}
         </div>
         <div class="separador-complexo-btn notranslate" style="margin-top:20px;">
             ${selecionado.nome.toUpperCase()}
