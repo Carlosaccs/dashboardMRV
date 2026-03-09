@@ -1,122 +1,30 @@
-:root {
-    --mrv-verde: #065e03;
-    --mrv-verde-hover: #088a04;
-    --mrv-laranja: #ff8c00;
-    --cinza-mapa: #777777; /* Cinza mais escuro padrão */
-    --cinza-hover: #999999; /* Cinza mais claro no hover */
-    --texto-escuro: #333;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; }
-
-.header { background: var(--mrv-verde); color: white; padding: 6px; text-align: center; font-weight: bold; font-size: 0.85rem; }
-.wrapper { display: flex; flex: 1; overflow: hidden; }
-
-/* 1. BARRA ESQUERDA (Travada em 280px) */
-.sidebar-esq { 
-    width: 280px; 
-    border-right: 1px solid #ddd; 
-    overflow-y: auto; 
-    padding: 10px 0; 
-    background: #f8f9fa; 
-    flex-shrink: 0; 
-}
-
-.separador-complexo-btn, .btRes {
-    width: 92% !important;
-    margin: 3px auto !important;
-    height: 28px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 0 8px !important;
-    border-radius: 4px;
-    font-size: 0.68rem;
-    cursor: pointer;
-    transition: 0.2s;
-    border: 1px solid #ddd;
-}
-
-.separador-complexo-btn {
-    background: #333 !important;
-    color: white !important;
-    justify-content: center;
-    font-weight: bold;
-    text-transform: uppercase;
-    border: none !important;
-}
-
-.btRes {
-    background: #fff;
-    border-left: 4px solid var(--mrv-verde) !important;
-    justify-content: space-between;
-    color: var(--texto-escuro);
-}
-
-/* Hover do Residencial com Borda Verde */
-.btRes:hover { 
-    background: var(--mrv-verde-hover) !important; 
-    border-color: var(--mrv-verde) !important; 
-    border-left-width: 6px !important; 
-}
-
-.btRes.ativo { 
-    background: var(--mrv-laranja) !important; 
-    color: white !important; 
-    border-color: #d67e00 !important; 
-}
-
-.btRes strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; }
-.badge-estoque { font-size: 0.62rem; font-weight: bold; white-space: nowrap; }
-
-/* 2. CONTEÚDO CENTRAL (Mapas) */
-.conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
-#cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.7rem; color: #555; height: 28px; display: flex; align-items: center; justify-content: center; }
-
-#caixa-a { flex: 1.3; border-bottom: 2px solid #eee; display: flex; align-items: center; justify-content: center; padding: 15px; overflow: hidden; }
-#caixa-b { flex: 0.45; display: flex; align-items: center; justify-content: center; padding: 10px; background: white; overflow: hidden; }
-
-svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
-
+/* Cor padrão dos mapas: Cinza Escuro */
 path { 
-    fill: var(--cinza-mapa); 
+    fill: #777777 !important; 
     stroke: #ffffff; 
     stroke-width: 0.8; 
     transition: 0.2s; 
-    pointer-events: all; 
 }
 
-/* Hover Cinza (Clareia) */
-path:hover { fill: var(--cinza-hover); }
+/* Hover nos cinzas: Clareia */
+path:hover { fill: #999999 !important; }
 
-/* Hover Verde/Laranja */
-path.commrv { fill: var(--mrv-verde) !important; cursor: pointer; }
-path.commrv:hover { fill: var(--mrv-laranja) !important; }
+/* Áreas com MRV: Verde */
+path.commrv { fill: #065e03 !important; cursor: pointer; }
+path.commrv:hover { fill: #ff8c00 !important; }
 
-/* Botão Grande São Paulo no mapa do Estado */
+/* Força a Grande SP a ser Verde no Mapa do Estado */
 #grandesaopaulo { 
-    fill: var(--mrv-verde) !important; 
+    fill: #065e03 !important; 
     cursor: pointer !important; 
 }
-#grandesaopaulo:hover { fill: var(--mrv-laranja) !important; }
+#grandesaopaulo:hover { 
+    fill: #ff8c00 !important; 
+}
 
+/* Destaque do selecionado */
 path.path-ativo { 
-    fill: var(--mrv-laranja) !important; 
+    fill: #ff8c00 !important; 
     stroke: #000 !important; 
     stroke-width: 1.5px !important; 
 }
-
-/* 3. SIDEBAR DIREITA (Alargada em 50% = 480px) */
-.sidebar-dir { 
-    width: 480px; 
-    border-left: 1px solid #ddd; 
-    overflow-y: auto; 
-    padding: 10px; 
-    flex-shrink: 0; 
-}
-
-.vitrine-topo { background: var(--mrv-verde); color: white; padding: 5px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.7rem; }
-.ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 8px 0; }
-.info-box { background: #f2f2f2; padding: 5px; border-radius: 4px; border: 1px solid #e5e5e5; }
-.info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; }
-.info-box span { font-size: 0.72rem; font-weight: 600; }
