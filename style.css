@@ -23,7 +23,7 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     flex-shrink: 0; 
 }
 
-/* REGRA DE OURO: Largura total para alinhar na vitrine */
+/* REGRA DE OURO: Alinhamento total */
 .separador-complexo-btn, .btRes {
     width: 100% !important;
     margin: 4px 0 !important;
@@ -38,7 +38,6 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     border: 1px solid #ddd;
 }
 
-/* Ajuste para botões na barra esquerda (manter margem lateral) */
 .sidebar-esq .btRes, .sidebar-esq .separador-complexo-btn {
     width: 92% !important;
     margin: 4px auto !important;
@@ -61,7 +60,6 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     color: var(--texto-escuro);
 }
 
-/* Hover: Fundo Cinza Claro e Borda Verde */
 .btRes:hover { 
     background: #f0f0f0 !important; 
     border-color: var(--mrv-verde) !important; 
@@ -111,13 +109,23 @@ path.path-ativo {
 .sidebar-dir { 
     width: 480px; 
     border-left: 1px solid #ddd; 
-    overflow-y: auto; 
+    overflow-y: auto; /* Garante scroll se o texto for gigante */
     padding: 10px; 
     flex-shrink: 0; 
+    background: #fff;
 }
 
 .vitrine-topo { background: var(--mrv-verde); color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.75rem; text-transform: uppercase; }
 .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 8px 0; }
-.info-box { background: #f2f2f2; padding: 5px; border-radius: 4px; border: 1px solid #e5e5e5; }
-.info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; }
+.info-box { background: #f2f2f2; padding: 8px; border-radius: 4px; border: 1px solid #e5e5e5; height: auto; }
+.info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
 .info-box span { font-size: 0.72rem; font-weight: 600; }
+
+/* Ajuste para o texto longo do complexo */
+.desc-longa-texto {
+    font-size: 0.78rem; 
+    line-height: 1.5; 
+    color: #333; 
+    text-align: justify;
+    white-space: normal; /* Garante que o texto quebre linhas */
+}
