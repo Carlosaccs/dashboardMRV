@@ -9,14 +9,9 @@ const COL = {
     P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, BK_CLI: 20
 };
 
-// Inicia assim que o HTML carregar
-window.onload = () => {
-    iniciarApp();
-};
-
 async function iniciarApp() {
+    // Tenta desenhar os mapas primeiro para sair da tela de carregamento
     try {
-        // Tenta desenhar os mapas imediatamente para tirar a tela de "Carregando"
         if (typeof MAPA_GSP !== 'undefined') {
             desenharMapas();
         }
@@ -34,7 +29,6 @@ async function carregarPlanilha() {
         const response = await fetch(`${URL_CSV}&v=${new Date().getTime()}`);
         let texto = await response.text();
         
-        // Limpeza de quebras de linha dentro de aspas
         texto = texto.replace(/"([^"]*)"/g, (m, p1) => p1.replace(/\r?\n|\r/g, " "));
         const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
         
@@ -66,7 +60,7 @@ async function carregarPlanilha() {
         desenharMapas(); 
 
     } catch (e) { 
-        console.error("Erro ao carregar CSV:", e);
+        console.error("Erro no carregamento dos dados:", e);
         desenharMapas();
     }
 }
@@ -85,7 +79,7 @@ function renderizarNoContainer(id, dados, interativo) {
         let acaoClique = "";
         if (interativo) {
             if (isGrandeSP) {
-                acaoClique = `onclick="trocarMapas()"` ;
+                acaoClique = `onclick="trocarMapas()"`;
             } else {
                 acaoClique = `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
             }
@@ -115,14 +109,15 @@ function desenharMapas() {
 
 function cliqueNoMapa(id, nome, temMRV) {
     if (!temMRV) return;
-    comandoSelecao(id, nome);
+    comandoSelecao(id, nome, 'mapa');
 }
 
-function comandoSelecao(idPath, nomePath) {
+function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
     
     if (imoveis.length > 0) {
+        const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
         nomeSelecionado = nomePath;
         const titulo = document.getElementById('cidade-titulo');
         if (titulo) titulo.innerText = nomePath;
@@ -134,59 +129,8 @@ function comandoSelecao(idPath, nomePath) {
             pathSelecionado = el;
         }
         
-        montarVitrine(imoveis[0], imoveis, nomePath);
+        montarVitrine(selecionado, imoveis, nomePath);
     }
-}
-
-function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
-    const painel = document.getElementById('ficha-tecnica');
-    if (!painel) return;
-
-    const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    
-    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    const idLimpo = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
-    const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
-    if (btnEsq) btnEsq.classList.add('ativo');
-
-    painel.innerHTML = `
-        <div class="vitrine-topo notranslate">MRV EM ${nomeRegiao.toUpperCase()}</div>
-        <div style="margin-bottom:15px;">
-            ${outros.map(o => `
-                <button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')">
-                    <strong class="notranslate">${o.nome}</strong> 
-                    ${obterHtmlEstoque(o.estoque, o.tipo)}
-                </button>
-            `).join('')}
-        </div>
-        <div class="separador-complexo-btn notranslate" style="margin-top:20px;">
-            ${selecionado.nome.toUpperCase()}
-        </div>
-        <div style="padding: 10px 5px;">
-            <p style="font-size:0.7rem; color:#666; margin-bottom:12px;">📍 ${selecionado.endereco}</p>
-            <div class="ficha-grid">
-                <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
-                <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
-                <div class="info-box"><label>📐 Plantas</label><span>${selecionado.plantas}</span></div>
-                <div class="info-box"><label>🏗️ Obra</label><span>${selecionado.obra}%</span></div>
-            </div>
-            <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 3px solid #f37021;">
-                <label style="color:#d67e00;">💡 Dica do Corretor</label>
-                <p style="font-size:0.75rem;">${selecionado.dica}</p>
-            </div>
-            <a href="${selecionado.book}" target="_blank" class="btRes" 
-               style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none; width:100% !important; display:flex;">
-               📄 Book Cliente
-            </a>
-        </div>
-    `;
-}
-
-function navegarVitrine(nome, nomeRegiao) {
-    const imovel = DADOS_PLANILHA.find(i => i.nome === nome);
-    if (!imovel) return;
-    const lista = DADOS_PLANILHA.filter(i => i.id_path === imovel.id_path);
-    montarVitrine(imovel, lista, nomeRegiao);
 }
 
 function hoverNoMapa(nome) { 
@@ -196,7 +140,7 @@ function hoverNoMapa(nome) {
 
 function resetTitulo() { 
     const titulo = document.getElementById('cidade-titulo');
-    if (titulo) titulo.innerText = nomeSelecionado || "Passe o mouse ou selecione uma cidade"; 
+    if (titulo) titulo.innerText = nomeSelecionado; 
 }
 
 function trocarMapas() { 
@@ -209,22 +153,73 @@ function limparSelecao() {
     pathSelecionado = null;
     nomeSelecionado = "";
     const titulo = document.getElementById('cidade-titulo');
-    if (titulo) titulo.innerText = "Passe o mouse ou selecione uma cidade";
+    if (titulo) titulo.innerText = "Selecione uma região";
+    
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+    
     const painel = document.getElementById('ficha-tecnica');
-    if (painel) painel.innerHTML = '<div class="vitrine-topo">Aguardando Seleção</div>';
+    if (painel) {
+        painel.innerHTML = `
+            <div class="vitrine-topo">Aguardando Seleção</div>
+            <p style="text-align:center; padding:40px; color:#999; font-size:0.8rem;">
+                Clique em algum Residencial ou em alguma região verde do mapa
+            </p>`;
+    }
 }
 
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
     const cleanVal = valor ? valor.toString().toUpperCase().trim() : "";
-    if (cleanVal === "" || cleanVal === "NULL") return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
+    if (cleanVal === "" || cleanVal === "NULL" || cleanVal.length > 15) return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
+    if (cleanVal === "VENDIDO" || cleanVal === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
     const n = parseInt(valor);
     if (!isNaN(n)) {
         if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${n} UN!</span>`;
         return `<span class="badge-estoque">RESTAM ${n} UN.</span>`;
     }
     return `<span class="badge-estoque">${valor}</span>`;
+}
+
+function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
+    const painel = document.getElementById('ficha-tecnica');
+    if (!painel) return;
+
+    const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome && i.tipo !== 'N');
+    
+    document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
+    const idLimpo = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
+    const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
+    if (btnEsq) btnEsq.classList.add('ativo');
+
+    painel.innerHTML = `
+        <div class="vitrine-topo notranslate">${selecionado.nomeFull}</div>
+        <div style="margin-bottom:15px;">
+            ${outros.map(o => `<button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong class="notranslate">${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
+        </div>
+        <div style="border-top:1px solid #eee; padding-top:15px;">
+            <div class="btRes ativo notranslate" style="cursor:default; margin-bottom:10px;">
+                <strong class="notranslate">${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}
+            </div>
+            <p style="font-size:0.7rem; color:#666; margin-bottom:10px;">📍 ${selecionado.endereco}</p>
+            <div class="ficha-grid">
+                <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
+                <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
+                <div class="info-box"><label>📐 Plantas</label><span>${selecionado.plantas}</span></div>
+                <div class="info-box"><label>🏗️ Obra</label><span>${selecionado.obra}%</span></div>
+            </div>
+            <div class="info-box" style="background:#fff5e6; margin-top:10px; border-left: 3px solid #f37021;">
+                <label style="color:#d67e00;">💡 Dica do Corretor</label>
+                <p style="font-size:0.75rem;">${selecionado.dica}</p>
+            </div>
+            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none;">📄 Book Cliente</a>
+        </div>`;
+}
+
+function navegarVitrine(nome, nomeRegiao) {
+    const imovel = DADOS_PLANILHA.find(i => i.nome === nome);
+    if (!imovel) return;
+    const lista = DADOS_PLANILHA.filter(i => i.id_path === imovel.id_path);
+    montarVitrine(imovel, lista, nomeRegiao);
 }
 
 function limparLinkDrive(url) {
