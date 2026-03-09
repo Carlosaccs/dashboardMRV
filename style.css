@@ -62,9 +62,20 @@ path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; 
 .info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
 .info-box span { font-size: 0.72rem; font-weight: 600; }
 
-.desc-longa-texto { font-size: 0.8rem; line-height: 1.6; color: #333; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #eee; }
+/* Estilo para o texto longo do complexo com suporte a parágrafos */
+.desc-longa-texto { 
+    font-size: 0.82rem; 
+    line-height: 1.6; 
+    color: #333; 
+    padding: 15px; 
+    background: #fdfdfd; 
+    border-radius: 6px; 
+    border: 1px solid #eee; 
+    text-align: justify;
+}
+.desc-longa-texto p { margin-bottom: 14px; }
+.desc-longa-texto p:last-child { margin-bottom: 0; }
 
-/* NOVO: Botão Google Maps */
 .btn-maps {
     display: inline-flex;
     align-items: center;
@@ -79,4 +90,3 @@ path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; 
     transition: 0.2s;
 }
 .btn-maps:hover { background: #3367D6; }
-.btn-maps i { margin-right: 4px; }
