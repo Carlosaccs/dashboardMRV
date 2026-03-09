@@ -159,11 +159,10 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     if (!painel) return;
 
-    // Localiza o objeto do COMPLEXO na lista da cidade
-    const objComplexo = listaDaCidade.find(i => i.tipo === 'N');
-    // Filtra apenas os RESIDENCIAIS (excluindo o selecionado se for residencial)
-    const residenciais = listaDaCidade.filter(i => i.tipo !== 'N' && i.nome !== selecionado.nome);
+    // Filtra para mostrar apenas botões que NÃO são o item atualmente selecionado
+    const botoesSuperiores = listaDaCidade.filter(i => i.nome !== selecionado.nome);
 
+    // Reseta destaques na esquerda
     document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(b => b.classList.remove('ativo'));
     const idLimpo = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
     const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
@@ -176,20 +175,25 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         <div style="margin-bottom:15px;">
     `;
 
-    // 1. O botão do COMPLEXO sempre aparece primeiro se existir
-    if (objComplexo) {
-        const classeAtivo = (selecionado.tipo === 'N') ? 'ativo' : '';
-        html += `<button class="separador-complexo-btn notranslate ${classeAtivo}" style="cursor:pointer;" onclick="navegarVitrine('${objComplexo.nome}', '${nomeRegiao}')">${objComplexo.nome.toUpperCase()}</button>`;
-    }
-
-    // 2. Lista os outros residenciais abaixo
-    html += residenciais.map(o => `<button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong class="notranslate">${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('');
+    // Renderiza a lista de botões superiores (excluindo o atual)
+    botoesSuperiores.forEach(item => {
+        if (item.tipo === 'N') {
+            html += `<button class="separador-complexo-btn notranslate" style="cursor:pointer;" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')">${item.nome.toUpperCase()}</button>`;
+        } else {
+            html += `<button class="btRes notranslate" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}</button>`;
+        }
+    });
     
     html += `</div>`;
 
-    // 3. Título do item ATUALMENTE selecionado
+    // BLOCO DE DESTAQUE (O item selecionado desce para cá)
+    if (selecionado.tipo === 'N') {
+        html += `<div class="separador-complexo-btn notranslate ativo">${selecionado.nome.toUpperCase()}</div>`;
+    } else {
+        html += `<button class="btRes notranslate ativo"><strong class="notranslate">${selecionado.nome}</strong> ${obterHtmlEstoque(selecionado.estoque, selecionado.tipo)}</button>`;
+    }
+
     html += `
-        <div class="separador-complexo-btn notranslate ativo">${selecionado.nome.toUpperCase()}</div>
         <div style="padding-top:10px;">
             <p style="font-size:0.75rem; color:#444; margin-bottom:12px; font-weight:500; display: flex; align-items: center; justify-content: space-between;">
                 <span>📍 ${selecionado.endereco}</span>
