@@ -62,12 +62,21 @@ path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; 
 .info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
 .info-box span { font-size: 0.72rem; font-weight: 600; }
 
-.desc-longa-texto {
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: #333;
-    padding: 12px;
-    background: #f9f9f9;
-    border-radius: 6px;
-    border: 1px solid #eee;
+.desc-longa-texto { font-size: 0.8rem; line-height: 1.6; color: #333; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #eee; }
+
+/* NOVO: Botão Google Maps */
+.btn-maps {
+    display: inline-flex;
+    align-items: center;
+    background: #4285F4;
+    color: white !important;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    margin-left: 10px;
+    transition: 0.2s;
 }
+.btn-maps:hover { background: #3367D6; }
+.btn-maps i { margin-right: 4px; }
