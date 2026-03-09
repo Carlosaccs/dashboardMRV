@@ -165,7 +165,6 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
     if (btnEsq) btnEsq.classList.add('ativo');
 
-    // Link do Maps gerado dinamicamente
     const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
 
     let html = `
@@ -182,7 +181,14 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     `;
 
     if (selecionado.tipo === 'N') {
-        html += `<div class="desc-longa-texto">${selecionado.descLonga || "Informações em breve."}</div>`;
+        // Lógica de Parágrafos: Separa por quebra de linha e envolve em <p>
+        const textoProcessado = selecionado.descLonga
+            .split('\n')
+            .filter(paragrafo => paragrafo.trim() !== '')
+            .map(paragrafo => `<p>${paragrafo.trim()}</p>`)
+            .join('');
+
+        html += `<div class="desc-longa-texto">${textoProcessado || "Descrição em breve."}</div>`;
     } else {
         html += `
             <div class="ficha-grid">
