@@ -6,7 +6,9 @@ let mapaAtivo = 'GSP';
 const COL = {
     ID: 0, TIPO: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
     ESTOQUE: 5, END: 6, PRECO: 7, ENTREGA: 8, 
-    P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, BK_CLI: 20
+    P_DE: 9, P_ATE: 10, OBRA: 11, DICA: 12, 
+    DESC_LONGA: 13, // Coluna para o texto do complexo
+    BK_CLI: 20
 };
 
 async function iniciarApp() {
@@ -49,6 +51,7 @@ async function carregarPlanilha() {
                 plantas: (c[COL.P_DE] || c[COL.P_ATE]) ? `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}` : "Consulte",
                 obra: c[COL.OBRA] || "0",
                 dica: c[COL.DICA] || "",
+                descLonga: c[COL.DESC_LONGA] || "",
                 book: limparLinkDrive(c[COL.BK_CLI] || "")
             };
         }).filter(i => i.id_path !== "" && i.nome.length > 2);
@@ -78,7 +81,7 @@ function renderizarNoContainer(id, dados, interativo) {
         let acaoClique = "";
         if (interativo) {
             if (isGrandeSP) {
-                acaoClique = `onclick="trocarMapas()"` ;
+                acaoClique = `onclick="trocarMapas()"`;
             } else {
                 acaoClique = `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
             }
@@ -118,9 +121,8 @@ function comandoSelecao(idPath, nomePath, fonte) {
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
         
-        // --- LÓGICA DE TROCA DE MAPA AUTOMÁTICA ---
+        // --- TROCA DE MAPA AUTOMÁTICA ---
         const estaNaGrandeSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-        
         if (estaNaGrandeSP && mapaAtivo !== 'GSP') {
             mapaAtivo = 'GSP';
             desenharMapas();
@@ -128,7 +130,6 @@ function comandoSelecao(idPath, nomePath, fonte) {
             mapaAtivo = 'INTERIOR';
             desenharMapas();
         }
-        // ------------------------------------------
 
         nomeSelecionado = nomePath;
         const titulo = document.getElementById('cidade-titulo');
@@ -156,21 +157,27 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
     if (btnEsq) btnEsq.classList.add('ativo');
 
-    painel.innerHTML = `
+    let htmlBase = `
         <div class="vitrine-topo notranslate">MRV EM ${nomeRegiao.toUpperCase()}</div>
         <div style="margin-bottom:15px;">
-            ${outros.map(o => `
-                <button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')">
-                    <strong class="notranslate">${o.nome}</strong> 
-                    ${obterHtmlEstoque(o.estoque, o.tipo)}
-                </button>
-            `).join('')}
+            ${outros.map(o => `<button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong class="notranslate">${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
         </div>
-        <div class="separador-complexo-btn notranslate" style="margin-top:20px;">
+        <div class="separador-complexo-btn notranslate">
             ${selecionado.nome.toUpperCase()}
         </div>
         <div style="padding-top:10px;">
             <p style="font-size:0.7rem; color:#666; margin-bottom:10px;">📍 ${selecionado.endereco}</p>
+    `;
+
+    if (selecionado.tipo === 'N') {
+        htmlBase += `
+            <div class="info-box" style="background:#f9f9f9; border-left: 3px solid #333; min-height:100px;">
+                <label>Sobre o Complexo</label>
+                <p style="font-size:0.75rem; line-height:1.4; color:#444; padding-top:5px;">${selecionado.descLonga || "Descrição do complexo disponível em breve."}</p>
+            </div>
+        `;
+    } else {
+        htmlBase += `
             <div class="ficha-grid">
                 <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
                 <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
@@ -182,7 +189,11 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                 <p style="font-size:0.75rem;">${selecionado.dica}</p>
             </div>
             <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:15px; border:none; width:100% !important;">📄 Book Cliente</a>
-        </div>`;
+        `;
+    }
+
+    htmlBase += `</div>`;
+    painel.innerHTML = htmlBase;
 }
 
 function navegarVitrine(nome, nomeRegiao) {
