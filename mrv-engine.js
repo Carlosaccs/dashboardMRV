@@ -30,30 +30,58 @@ async function carregarPlanilha() {
         const response = await fetch(`${URL_CSV}&v=${new Date().getTime()}`);
         let texto = await response.text();
         
-        // Mantive a limpeza de quebras de linha dentro de aspas para não quebrar o CSV
-        texto = texto.replace(/"([^"]*)"/g, (m, p1) => p1.replace(/\r?\n|\r/g, " "));
-        const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-        
+        // Divide as linhas respeitando quebras de linha dentro de aspas (comum em descrições longas)
+        const linhas = [];
+        let linhaAtual = "";
+        let dentroDeAspas = false;
+
+        for (let i = 0; i < texto.length; i++) {
+            const char = texto[i];
+            if (char === '"') dentroDeAspas = !dentroDeAspas;
+            if ((char === '\n' || char === '\r') && !dentroDeAspas) {
+                if (linhaAtual.trim()) linhas.push(linhaAtual);
+                linhaAtual = "";
+            } else {
+                linhaAtual += char;
+            }
+        }
+        if (linhaAtual.trim()) linhas.push(linhaAtual);
+
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
-            const idLimpo = c[COL.ID] ? c[COL.ID].toLowerCase().replace(/\s/g, '') : "";
+            const colunas = [];
+            let campo = "";
+            let aspas = false;
+
+            for (let i = 0; i < linha.length; i++) {
+                const char = linha[i];
+                if (char === '"') aspas = !aspas;
+                else if (char === ',' && !aspas) {
+                    colunas.push(campo.trim());
+                    campo = "";
+                } else {
+                    campo += char;
+                }
+            }
+            colunas.push(campo.trim());
+
+            const idLimpo = colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "";
 
             return {
                 id_path: idLimpo,
-                tipo: (c[COL.TIPO] === 'COMPLEXO' || c[COL.TIPO] === 'N') ? 'N' : 'R',
-                ordem: parseInt(c[COL.ORDEM]) || 999,
-                nome: c[COL.NOME] || "",
-                nomeFull: c[COL.NOME_FULL] || c[COL.NOME],
-                estoque: c[COL.ESTOQUE] || "",
-                endereco: c[COL.END] || "",
-                cidade: c[COL.ID] ? c[COL.ID].toUpperCase() : "", 
-                entrega: c[COL.ENTREGA] || "",
-                preco: c[COL.PRECO] || "",
-                plantas: (c[COL.P_DE] || c[COL.P_ATE]) ? `De ${c[COL.P_DE]} a ${c[COL.P_ATE]}` : "Consulte",
-                obra: c[COL.OBRA] || "0",
-                dica: c[COL.DICA] || "",
-                descLonga: c[COL.DESC_LONGA] || "",
-                book: limparLinkDrive(c[COL.BK_CLI] || "")
+                tipo: (colunas[COL.TIPO] === 'COMPLEXO' || colunas[COL.TIPO] === 'N') ? 'N' : 'R',
+                ordem: parseInt(colunas[COL.ORDEM]) || 999,
+                nome: colunas[COL.NOME] || "",
+                nomeFull: colunas[COL.NOME_FULL] || colunas[COL.NOME],
+                estoque: colunas[COL.ESTOQUE] || "",
+                endereco: colunas[COL.END] || "",
+                cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "", 
+                entrega: colunas[COL.ENTREGA] || "",
+                preco: colunas[COL.PRECO] || "",
+                plantas: (colunas[COL.P_DE] || colunas[COL.P_ATE]) ? `De ${colunas[COL.P_DE]} a ${colunas[COL.P_ATE]}` : "Consulte",
+                obra: colunas[COL.OBRA] || "0",
+                dica: colunas[COL.DICA] || "",
+                descLonga: colunas[COL.DESC_LONGA] || "",
+                book: limparLinkDrive(colunas[COL.BK_CLI] || "")
             };
         }).filter(i => i.id_path !== "" && i.nome.length > 2);
 
@@ -62,7 +90,7 @@ async function carregarPlanilha() {
         desenharMapas(); 
 
     } catch (e) { 
-        console.error("Erro no carregamento dos dados:", e);
+        console.error("Erro no carregamento:", e);
         desenharMapas();
     }
 }
@@ -74,18 +102,14 @@ function renderizarNoContainer(id, dados, interativo) {
     const pathsHtml = dados.paths.map(p => {
         const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
-        const isGrandeSP = p.name.toLowerCase().includes("grande são paulo") || p.id.toLowerCase() === "grandesaopaulo";
-        const idAtributo = isGrandeSP ? 'id="grandesaopaulo"' : `id="${id}-${p.id}"`;
+        const isGSP = p.name.toLowerCase().includes("grande são paulo") || p.id.toLowerCase() === "grandesaopaulo";
+        const idAttr = isGSP ? 'id="grandesaopaulo"' : `id="${id}-${p.id}"`;
         
-        let acaoClique = "";
-        if (interativo) {
-            acaoClique = isGrandeSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`;
-        }
-
-        const acoesHover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
-        const classeExtra = (temMRV || isGrandeSP) && interativo ? 'commrv' : '';
+        let clique = interativo ? (isGSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
+        const hover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        const classe = (temMRV || isGSP) && interativo ? 'commrv' : '';
         
-        return `<path ${idAtributo} name="${p.name}" d="${p.d}" class="${classeExtra}" ${acaoClique} ${acoesHover}></path>`;
+        return `<path ${idAttr} name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
     }).join('');
 
     const zoom = interativo ? 'scale(1.2)' : 'scale(0.9)';
@@ -98,10 +122,10 @@ function renderizarNoContainer(id, dados, interativo) {
 }
 
 function desenharMapas() {
-    const dadosCima = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
-    const dadosBaixo = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
-    renderizarNoContainer('caixa-a', dadosCima, true);
-    renderizarNoContainer('caixa-b', dadosBaixo, false);
+    const cima = (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR;
+    const baixo = (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP;
+    renderizarNoContainer('caixa-a', cima, true);
+    renderizarNoContainer('caixa-b', baixo, false);
 }
 
 function cliqueNoMapa(id, nome, temMRV) {
@@ -116,14 +140,9 @@ function comandoSelecao(idPath, nomePath, fonte) {
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
         
-        const estaNaGrandeSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-        if (estaNaGrandeSP && mapaAtivo !== 'GSP') {
-            mapaAtivo = 'GSP';
-            desenharMapas();
-        } else if (!estaNaGrandeSP && mapaAtivo !== 'INTERIOR') {
-            mapaAtivo = 'INTERIOR';
-            desenharMapas();
-        }
+        const gspCheck = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+        if (gspCheck && mapaAtivo !== 'GSP') { mapaAtivo = 'GSP'; desenharMapas(); }
+        else if (!gspCheck && mapaAtivo !== 'INTERIOR') { mapaAtivo = 'INTERIOR'; desenharMapas(); }
 
         nomeSelecionado = nomePath;
         const titulo = document.getElementById('cidade-titulo');
@@ -131,10 +150,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
         
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
         const el = document.getElementById(`caixa-a-${idPath}`) || document.getElementById('grandesaopaulo');
-        if (el) {
-            el.classList.add('path-ativo');
-            pathSelecionado = el;
-        }
+        if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
         
         montarVitrine(selecionado, imoveis, nomePath);
     }
@@ -145,33 +161,25 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     if (!painel) return;
 
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome && i.tipo !== 'N');
-    
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
     const idLimpo = selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-');
     const btnEsq = document.getElementById(`btn-esq-${idLimpo}`);
     if (btnEsq) btnEsq.classList.add('ativo');
 
-    let htmlBase = `
+    let html = `
         <div class="vitrine-topo notranslate">MRV EM ${nomeRegiao.toUpperCase()}</div>
         <div style="margin-bottom:15px;">
             ${outros.map(o => `<button class="btRes notranslate" onclick="navegarVitrine('${o.nome}', '${nomeRegiao}')"><strong class="notranslate">${o.nome}</strong> ${obterHtmlEstoque(o.estoque, o.tipo)}</button>`).join('')}
         </div>
-        <div class="separador-complexo-btn notranslate">
-            ${selecionado.nome.toUpperCase()}
-        </div>
+        <div class="separador-complexo-btn notranslate">${selecionado.nome.toUpperCase()}</div>
         <div style="padding-top:10px;">
-            <p style="font-size:0.7rem; color:#666; margin-bottom:10px;">📍 ${selecionado.endereco}</p>
+            <p style="font-size:0.75rem; color:#444; margin-bottom:12px; font-weight:500;">📍 ${selecionado.endereco}</p>
     `;
 
     if (selecionado.tipo === 'N') {
-        htmlBase += `
-            <div class="info-box" style="background:#f9f9f9; border-left: 3px solid #333;">
-                <label>Sobre o Complexo</label>
-                <div class="desc-longa-texto">${selecionado.descLonga || "Descrição não disponível."}</div>
-            </div>
-        `;
+        html += `<div class="desc-longa-texto">${selecionado.descLonga || "Informações em breve."}</div>`;
     } else {
-        htmlBase += `
+        html += `
             <div class="ficha-grid">
                 <div class="info-box"><label>💰 Preço</label><span>${selecionado.preco}</span></div>
                 <div class="info-box"><label>🔑 Entrega</label><span>${selecionado.entrega}</span></div>
@@ -186,8 +194,8 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         `;
     }
 
-    htmlBase += `</div>`;
-    painel.innerHTML = htmlBase;
+    html += `</div>`;
+    painel.innerHTML = html;
 }
 
 function navegarVitrine(nome, nomeRegiao) {
@@ -198,13 +206,13 @@ function navegarVitrine(nome, nomeRegiao) {
 }
 
 function hoverNoMapa(nome) { 
-    const titulo = document.getElementById('cidade-titulo');
-    if (titulo) titulo.innerText = nome; 
+    const t = document.getElementById('cidade-titulo');
+    if (t) t.innerText = nome; 
 }
 
 function resetTitulo() { 
-    const titulo = document.getElementById('cidade-titulo');
-    if (titulo) titulo.innerText = nomeSelecionado || "Selecione uma região"; 
+    const t = document.getElementById('cidade-titulo');
+    if (t) t.innerText = nomeSelecionado || "Selecione uma região"; 
 }
 
 function trocarMapas() { 
@@ -214,20 +222,19 @@ function trocarMapas() {
 }
 
 function limparSelecao() {
-    pathSelecionado = null;
-    nomeSelecionado = "";
-    const titulo = document.getElementById('cidade-titulo');
-    if (titulo) titulo.innerText = "Selecione uma região";
+    pathSelecionado = null; nomeSelecionado = "";
+    const t = document.getElementById('cidade-titulo');
+    if (t) t.innerText = "Selecione uma região";
     document.querySelectorAll('.btRes').forEach(b => b.classList.remove('ativo'));
-    const painel = document.getElementById('ficha-tecnica');
-    if (painel) painel.innerHTML = '<div class="vitrine-topo">Aguardando Seleção</div>';
+    const p = document.getElementById('ficha-tecnica');
+    if (p) p.innerHTML = '<div class="vitrine-topo">Aguardando Seleção</div>';
 }
 
 function obterHtmlEstoque(valor, tipo) {
     if (tipo === 'N') return "";
-    const cleanVal = valor ? valor.toString().toUpperCase().trim() : "";
-    if (cleanVal === "" || cleanVal === "NULL" || cleanVal.length > 15) return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
-    if (cleanVal === "VENDIDO" || cleanVal === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
+    const clean = valor ? valor.toString().toUpperCase().trim() : "";
+    if (clean === "" || clean === "NULL" || clean.length > 15) return `<span class="badge-estoque" style="color:#666">CONSULTAR</span>`;
+    if (clean === "VENDIDO" || clean === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`;
     const n = parseInt(valor);
     if (!isNaN(n)) {
         if (n < 6 && n > 0) return `<span class="badge-estoque" style="color:#e31010;">SÓ ${n} UN!</span>`;
@@ -238,6 +245,6 @@ function obterHtmlEstoque(valor, tipo) {
 
 function limparLinkDrive(url) {
     if (!url || !url.includes('drive.google.com')) return url;
-    const match = url.match(/\/d\/(.+?)\/|\/d\/(.+?)$|id=(.+?)(&|$)/);
-    return match ? `https://drive.google.com/file/d/${match[1]||match[2]||match[3]}/preview` : url;
+    const m = url.match(/\/d\/(.+?)\/|\/d\/(.+?)$|id=(.+?)(&|$)/);
+    return m ? `https://drive.google.com/file/d/${m[1]||m[2]||m[3]}/preview` : url;
 }
