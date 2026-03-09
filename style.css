@@ -23,10 +23,10 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     flex-shrink: 0; 
 }
 
-/* REGRA DE OURO: COMPLEXO e btRes IGUAIS */
+/* REGRA DE OURO: Largura total para alinhar na vitrine */
 .separador-complexo-btn, .btRes {
-    width: 92% !important;
-    margin: 3px auto !important;
+    width: 100% !important;
+    margin: 4px 0 !important;
     height: 28px !important;
     display: flex !important;
     align-items: center !important;
@@ -38,10 +38,16 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     border: 1px solid #ddd;
 }
 
+/* Ajuste para botões na barra esquerda (manter margem lateral) */
+.sidebar-esq .btRes, .sidebar-esq .separador-complexo-btn {
+    width: 92% !important;
+    margin: 4px auto !important;
+}
+
 .separador-complexo-btn {
     background: #333 !important;
     color: white !important;
-    justify-content: center !important; /* Texto Centralizado */
+    justify-content: center !important;
     font-weight: bold;
     text-transform: uppercase;
     border: none !important;
@@ -55,8 +61,9 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     color: var(--texto-escuro);
 }
 
+/* Hover: Fundo Cinza Claro e Borda Verde */
 .btRes:hover { 
-    background: var(--mrv-verde-hover) !important; 
+    background: #f0f0f0 !important; 
     border-color: var(--mrv-verde) !important; 
     border-left-width: 6px !important; 
 }
@@ -114,6 +121,3 @@ path.path-ativo {
 .info-box { background: #f2f2f2; padding: 5px; border-radius: 4px; border: 1px solid #e5e5e5; }
 .info-box label { display: block; font-size: 0.5rem; color: #777; font-weight: bold; text-transform: uppercase; }
 .info-box span { font-size: 0.72rem; font-weight: 600; }
-
-/* Botões dentro da vitrine ocupam 100% */
-.sidebar-dir .btRes { width: 100% !important; margin: 3px 0 !important; }
