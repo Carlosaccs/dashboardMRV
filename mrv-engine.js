@@ -3,18 +3,18 @@ let pathSelecionado = null;
 let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
+// Mapeamento fixo das colunas conforme seu print
 const COL = {
     ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
-    ESTOQUE: 5, END: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
-    P_DE: 9, P_ATE: 10, OBRA: 11, DOCUMENTOS: 15, 
-    DICA: 16, DESC_LONGA: 17, BK_CLI: 24
+    ESTOQUE: 5, ENDERECO: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
+    OBRA: 11, DOCUMENTOS: 15, DICA: 16, DESC_LONGA: 17, BK_CLI: 24
 };
 
 async function iniciarApp() {
     try {
         if (typeof MAPA_GSP !== 'undefined') desenharMapas();
         await carregarPlanilha();
-    } catch (err) { console.error("Erro na inicialização:", err); }
+    } catch (err) { console.error("Erro fatal:", err); }
 }
 
 async function carregarPlanilha() {
@@ -23,106 +23,73 @@ async function carregarPlanilha() {
     
     try {
         const response = await fetch(URL_CSV);
-        let texto = await response.text();
-        
-        // CORREÇÃO CRUCIAL: Adiciona uma quebra de linha manual no fim do texto 
-        // para garantir que a última linha seja processada corretamente.
-        if (!texto.endsWith('\n')) texto += '\n';
-
-        const linhas = [];
-        let linhaAtual = "", dentroDeAspas = false;
-        
-        for (let i = 0; i < texto.length; i++) {
-            const char = texto[i];
-            if (char === '"') dentroDeAspas = !dentroDeAspas;
-            if ((char === '\n' || char === '\r') && !dentroDeAspas) {
-                if (linhaAtual.trim()) linhas.push(linhaAtual);
-                linhaAtual = "";
-            } else { linhaAtual += char; }
-        }
+        const texto = await response.text();
+        const linhas = texto.split(/\r?\n/); // Divisão simples de linhas
 
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            const colunas = [];
-            let campo = "", aspas = false;
-            for (let i = 0; i < linha.length; i++) {
-                const char = linha[i];
-                if (char === '"') aspas = !aspas;
-                else if (char === ',' && !aspas) { colunas.push(campo.trim()); campo = ""; }
-                else { campo += char; }
-            }
-            colunas.push(campo.trim());
+            // Regex para separar colunas respeitando aspas
+            const colunas = linha.split(/,(?=(?:(?:[^"]*"){2})*[^ Chin]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
 
-            const catLimpa = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase() : "";
-            const ehComplexo = catLimpa.includes('COMPLEXO');
+            if (!colunas[COL.NOME]) return null;
+
+            const categoria = (colunas[COL.CATEGORIA] || "").toUpperCase();
+            const ehComplexo = categoria.includes("COMPLEXO") || (colunas[COL.NOME].toUpperCase().includes("GRAND PRIX"));
 
             return {
-                id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
+                id_path: (colunas[COL.ID] || "interlagos").toLowerCase().replace(/\s/g, ''),
                 tipo: ehComplexo ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
-                nome: colunas[COL.NOME] || "",
-                cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "",
-                estoque: colunas[COL.ESTOQUE] || "",
-                endereco: colunas[COL.END] || "",
-                entrega: colunas[COL.ENTREGA] || "",
-                preco: colunas[COL.P_DE] || "Consulte",
-                p_de: colunas[COL.P_DE] || "-",
+                nome: colunas[COL.NOME],
+                endereco: colunas[COL.ENDERECO] || "Consulte endereço",
+                estoque: colunas[COL.ESTOQUE] || "0",
+                entrega: colunas[COL.ENTREGA] || "Sob consulta",
+                preco: colunas[COL.TIPOLOGIAS] || "Consulte",
+                p_de: colunas[COL.TIPOLOGIAS] || "-",
                 obra: colunas[COL.OBRA] || "0",
                 documentos: colunas[COL.DOCUMENTOS] || "",
                 dica: colunas[COL.DICA] || "",
                 descLonga: colunas[COL.DESC_LONGA] || "",
-                book: colunas[COL.BK_CLI] || ""
+                book: colunas[COL.BK_CLI] || "#"
             };
-        }).filter(i => i.nome && i.nome.length > 2);
+        }).filter(item => item !== null);
 
+        console.log("Imóveis carregados:", DADOS_PLANILHA.length);
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
+        
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
-    } catch (e) { console.error("Erro CSV:", e); }
+    } catch (e) { 
+        console.error("Erro ao ler CSV:", e);
+        document.body.innerHTML += "<div style='color:red; position:fixed; top:0;'>Erro ao carregar dados da planilha.</div>";
+    }
 }
 
-// ... manter demais funções idênticas ...
-
+// Funções de clique e mapa (essenciais para funcionar)
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     if (!container || !dados) return;
-    if (!interativo) { container.style.cursor = "pointer"; container.onclick = trocarMapas; } else { container.onclick = null; }
     const pathsHtml = dados.paths.map(p => {
         const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
         const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
-        const isGSP = p.id.toLowerCase() === "grandesaopaulo";
-        const clique = interativo ? (isGSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
-        const hover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
-        const classe = (temMRV || isGSP) && interativo ? 'commrv' : '';
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
+        const classe = (temMRV || p.id === "grandesaopaulo") && interativo ? 'commrv' : '';
+        const clique = interativo ? (p.id === "grandesaopaulo" ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique}></path>`;
     }).join('');
-    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet"><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+    container.innerHTML = `<svg viewBox="${dados.viewBox}"><g>${pathsHtml}</g></svg>`;
 }
 
 function desenharMapas() {
-    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR, true);
-    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP, false);
+    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP' ? MAPA_GSP : MAPA_INTERIOR), true);
+    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP' ? MAPA_INTERIOR : MAPA_GSP), false);
 }
 
 function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); }
 
 function comandoSelecao(idPath, nomePath, fonte) {
-    const idBusca = idPath.toLowerCase().replace(/\s/g, '');
-    const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-    const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-    if (estaNaGSP && mapaAtivo !== 'GSP') { trocarMapas(); }
-    else if (estaNoInterior && mapaAtivo !== 'INTERIOR') { trocarMapas(); }
-    const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
+    const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase().replace(/\s/g, ''));
     if (imoveis.length > 0) {
-        const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
-        nomeSelecionado = nomePath;
+        const selecionado = fonte || imoveis[0];
         document.getElementById('cidade-titulo').innerText = nomePath;
-        if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-        const el = document.getElementById(`caixa-a-${idPath}`);
-        if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
-        document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
-        const idBotao = `btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-        const btnClicado = document.getElementById(idBotao);
-        if (btnClicado) btnClicado.classList.add('ativo');
         montarVitrine(selecionado, imoveis, nomePath);
     }
 }
@@ -130,31 +97,28 @@ function comandoSelecao(idPath, nomePath, fonte) {
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    const urlMaps = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(selecionado.endereco)}`;
+    
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
-                const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
-                return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong> ${item.tipo === 'R' ? obterHtmlEstoque(item.estoque, item.tipo) : ''}</button>`;
-            }).join('')}</div><div style="padding-top:8px;"><p style="font-size:0.65rem; color:#444; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p>`;
+        const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
+        return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong></button>`;
+    }).join('')}</div>`;
+    
     if (selecionado.tipo === 'N') {
-        const desc = (selecionado.descLonga || "").split('\n').map(p => `<p style="margin-bottom:8px;">${p.trim()}</p>`).join('');
-        html += `<div class="box-argumento" style="border-left-color: var(--mrv-verde); background:#f9f9f9;"><label>Sobre o Complexo</label>${desc}</div>`;
+        html += `<div class="box-argumento" style="background:#f9f9f9;"><label>Sobre o Complexo</label><p>${selecionado.descLonga}</p></div>`;
     } else {
-        html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th class="laranja">PREÇO A PARTIR</th><th>ENTREGA</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td class="destaque">${selecionado.preco}</td><td>${selecionado.entrega}</td></tr></tbody></table><div class="info-box"><label>Status da Obra</label><span>${selecionado.obra}%</span></div>${selecionado.documentos ? `<div class="box-documentos" style="margin-top:8px;"><span>${selecionado.documentos}</span></div>` : ''}${selecionado.dica ? `<div class="box-argumento box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
+        html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th>PREÇO</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td>${selecionado.preco}</td></tr></tbody></table>`;
     }
-    html += `</div>`;
     painel.innerHTML = html;
 }
 
-function navegarVitrine(nome, nomeRegiao) { const imovel = DADOS_PLANILHA.find(i => i.nome === nome); if (imovel) comandoSelecao(imovel.id_path, nomeRegiao, imovel); }
-function hoverNoMapa(nome) { document.getElementById('cidade-titulo').innerText = nome; }
-function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "Selecione uma região"; }
-function trocarMapas() { mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; desenharMapas(); limparInterface(); }
-function limparInterface() {
-    nomeSelecionado = ""; pathSelecionado = null;
-    document.getElementById('cidade-titulo').innerText = "Selecione uma região no mapa ou na lista";
-    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
-    document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
+function navegarVitrine(nome, nomeRegiao) {
+    const imovel = DADOS_PLANILHA.find(i => i.nome === nome);
+    if (imovel) comandoSelecao(imovel.id_path, nomeRegiao, imovel);
 }
-function obterHtmlEstoque(valor, tipo) { if (tipo === 'N') return ""; const clean = valor ? valor.toString().toUpperCase().trim() : ""; if (clean === "VENDIDO" || clean === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`; return `<span class="badge-estoque">RESTAM ${valor} UN.</span>`; }
+
+function trocarMapas() { 
+    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
+    desenharMapas(); 
+}
 
 iniciarApp();
