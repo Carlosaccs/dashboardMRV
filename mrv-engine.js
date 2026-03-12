@@ -1,7 +1,33 @@
-// ... (mantenha as variáveis e o COL no topo como estão)
+let DADOS_PLANILHA = [];
+let pathSelecionado = null;
+let nomeSelecionado = ""; 
+let mapaAtivo = 'GSP'; 
+
+const COL = {
+    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
+    ESTOQUE: 5, END: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
+    P_DE: 9, P_ATE: 10, OBRA: 11, DOCUMENTOS: 15, 
+    DICA: 16, DESC_LONGA: 17, BK_CLI: 24
+};
 
 async function iniciarApp() {
-    // REMOVEMOS os estilos daqui para você controlar pelo HTML/CSS
+    // 1. FORÇAR FAIXA VERDE (Direto no elemento para não falhar)
+    const topo = document.querySelector('.topo-dashboard');
+    if (topo) {
+        topo.innerText = "RESIDENCIAIS MRV EM SÃO PAULO";
+        topo.setAttribute('style', `
+            background-color: #00713a !important;
+            height: 80px !important;
+            line-height: 80px !important;
+            font-size: 1.8rem !important;
+            color: white !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            display: block !important;
+            width: 100% !important;
+        `);
+    }
+
     try {
         if (typeof MAPA_GSP !== 'undefined') desenharMapas();
         await carregarPlanilha();
@@ -15,7 +41,7 @@ async function carregarPlanilha() {
     try {
         const response = await fetch(URL_CSV);
         let texto = await response.text();
-        if (!texto.endsWith('\n')) texto += '\n'; // Garante o Grand Prix
+        if (!texto.endsWith('\n')) texto += '\n';
 
         const linhas = [];
         let linhaAtual = "", dentroDeAspas = false;
@@ -59,15 +85,62 @@ async function carregarPlanilha() {
         }).filter(i => i.nome && i.nome.length > 2);
 
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
-        gerarListaLateral(); 
+        gerarListaLateral(); // Chama a função que cria os botões
         desenharMapas();
     } catch (e) { console.error("Erro CSV:", e); }
 }
 
+// FUNÇÃO PARA CRIAR OS BOTÕES DA ESQUERDA CORRETAMENTE
+function gerarListaLateral() {
+    const lista = document.getElementById('lista-imoveis-lateral');
+    if (!lista) return;
+    lista.innerHTML = DADOS_PLANILHA.map(item => {
+        const idBotao = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
+        // O segredo está aqui: passar o id_path e a cidade para o comandoSelecao
+        return `<button id="${idBotao}" class="${classe}" onclick="comandoSelecao('${item.id_path}', '${item.cidade}', null)">
+            <strong>${item.nome}</strong>
+            ${item.tipo === 'R' ? obterHtmlEstoque(item.estoque, item.tipo) : ''}
+        </button>`;
+    }).join('');
+}
+
+function renderizarNoContainer(id, dados, interativo) {
+    const container = document.getElementById(id);
+    if (!container || !dados) return;
+    
+    if (!interativo) { 
+        container.style.cursor = "pointer"; 
+        container.onclick = trocarMapas; 
+    } else { 
+        container.onclick = null; 
+    }
+
+    const pathsHtml = dados.paths.map(p => {
+        const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
+        const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
+        const isGSP = p.id.toLowerCase() === "grandesaopaulo";
+        const clique = interativo ? (isGSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
+        const hover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        const classe = (temMRV || isGSP) && interativo ? 'commrv' : '';
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
+    }).join('');
+
+    const zoomStyle = interativo ? 'style="transform: scale(1.15); transform-origin: center; width: 100%; height: 100%;"' : 'style="width: 100%; height: 100%;"';
+    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+}
+
+function desenharMapas() {
+    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR, true);
+    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP, false);
+}
+
+function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); }
+
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
     
-    // ESTA PARTE É O QUE RESOLVE O PROBLEMA DOS BTRES:
+    // TROCA AUTOMÁTICA DE MAPA SE NECESSÁRIO
     const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
     const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
 
@@ -79,7 +152,8 @@ function comandoSelecao(idPath, nomePath, fonte) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
         nomeSelecionado = nomePath || selecionado.cidade;
         
-        document.getElementById('cidade-titulo').innerText = nomeSelecionado;
+        const tit = document.getElementById('cidade-titulo');
+        if(tit) tit.innerText = nomeSelecionado;
         
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
         const el = document.getElementById(`caixa-a-${idBusca}`);
@@ -94,4 +168,55 @@ function comandoSelecao(idPath, nomePath, fonte) {
     }
 }
 
-// ... (Restante das funções: renderizarNoContainer, montarVitrine, gerarListaLateral, etc. como na versão anterior)
+function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
+    const painel = document.getElementById('ficha-tecnica');
+    if(!painel) return;
+    const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
+    const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
+    
+    let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
+                const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
+                return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong> ${item.tipo === 'R' ? obterHtmlEstoque(item.estoque, item.tipo) : ''}</button>`;
+            }).join('')}</div><div style="padding-top:8px;"><p style="font-size:0.65rem; color:#444; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p>`;
+    
+    if (selecionado.tipo === 'N') {
+        const desc = (selecionado.descLonga || "").split('\n').map(p => `<p style="margin-bottom:8px;">${p.trim()}</p>`).join('');
+        html += `<div class="box-argumento" style="border-left-color: #00713a; background:#f9f9f9;"><label>Sobre o Complexo</label>${desc}</div>`;
+    } else {
+        html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th class="laranja">PREÇO A PARTIR</th><th>ENTREGA</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td class="destaque">${selecionado.preco}</td><td>${selecionado.entrega}</td></tr></tbody></table><div class="info-box"><label>Status da Obra</label><span>${selecionado.obra}%</span></div>${selecionado.documentos ? `<div class="box-documentos" style="margin-top:8px;"><span>${selecionado.documentos}</span></div>` : ''}${selecionado.dica ? `<div class="box-argumento box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
+    }
+    painel.innerHTML = html;
+}
+
+function navegarVitrine(nome, nomeRegiao) { 
+    const imovel = DADOS_PLANILHA.find(i => i.nome === nome); 
+    if (imovel) comandoSelecao(imovel.id_path, nomeRegiao, imovel); 
+}
+
+function hoverNoMapa(nome) { const t = document.getElementById('cidade-titulo'); if(t) t.innerText = nome; }
+function resetTitulo() { const t = document.getElementById('cidade-titulo'); if(t) t.innerText = nomeSelecionado || "Selecione uma região"; }
+
+function trocarMapas() { 
+    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
+    desenharMapas(); 
+    limparInterface(); 
+}
+
+function limparInterface() {
+    nomeSelecionado = ""; 
+    pathSelecionado = null;
+    const t = document.getElementById('cidade-titulo');
+    if(t) t.innerText = "Selecione uma região no mapa ou na lista";
+    const f = document.getElementById('ficha-tecnica');
+    if(f) f.innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
+    document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
+}
+
+function obterHtmlEstoque(valor, tipo) { 
+    if (tipo === 'N') return ""; 
+    const clean = valor ? valor.toString().toUpperCase().trim() : ""; 
+    if (clean === "VENDIDO" || clean === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`; 
+    return `<span class="badge-estoque">RESTAM ${valor} UN.</span>`; 
+}
+
+iniciarApp();
