@@ -1,195 +1,107 @@
-/* --- RESET E ESTRUTURA BASE --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+/* --- RESET E ESTRUTURA --- */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background-color: #f0f0f0; overflow-x: hidden; }
 
-body {
-    background-color: #f0f0f0;
-}
-
-/* --- TÍTULO PRINCIPAL (FAIXA VERDE) --- */
+/* --- FAIXA VERDE SUPERIOR --- */
 .topo-dashboard {
-    background-color: #00713a; /* Verde MRV */
+    background-color: #00713a;
     color: white;
-    padding: 20px 0; /* Faixa bem larga e imponente */
+    padding: 15px 0;
     text-align: center;
-    font-weight: 800;
-    font-size: 1.4rem;
+    font-weight: bold;
+    font-size: 1.2rem;
     width: 100%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-/* --- CONTAINER DOS MAPAS --- */
-/* O segredo para o mapa crescer está aqui */
+/* --- LAYOUT PRINCIPAL (3 COLUNAS) --- */
+.container-master {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    gap: 15px;
+    height: calc(100vh - 80px); /* Ajusta altura descontando o topo */
+}
+
+/* Coluna 1: Lista Lateral Esquerda */
+#lista-imoveis-lateral {
+    width: 250px;
+    overflow-y: auto;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+/* Coluna 2: Área do Mapa (Centro) */
+.area-mapa {
+    flex: 1; /* Ocupa o espaço central */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 #caixa-a {
     width: 100%;
-    height: 70vh; /* Aumentado para dar altura ao mapa */
+    height: 100%; /* Preenche a área central */
+    background: white;
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* Garante que o zoom não crie barras de rolagem */
-    background: #ffffff;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    overflow: hidden;
     border: 1px solid #ddd;
 }
 
 #caixa-a svg {
     width: 100%;
     height: 100%;
-    /* AQUI ESTÃO OS 15% DE AUMENTO */
-    transform: scale(1.15); 
+    transform: scale(1.15); /* AUMENTO DE 15% DO MAPA */
     transform-origin: center;
-    transition: transform 0.4s ease-in-out;
 }
 
-#caixa-b {
-    width: 100%;
-    height: 150px;
-    cursor: pointer;
-    background: #e9e9e9;
-    border-radius: 8px;
-    opacity: 0.8;
-    transition: 0.3s;
-}
-
-#caixa-b:hover {
-    opacity: 1;
-    background: #e0e0e0;
-}
-
-/* --- ELEMENTOS DO MAPA (SVG) --- */
-path {
-    fill: #cccccc;
-    stroke: #ffffff;
-    stroke-width: 1;
-    transition: fill 0.3s;
-}
-
-/* Regiões que possuem imóveis MRV */
-path.commrv {
-    fill: #00713a !important;
-    cursor: pointer;
-}
-
-path.commrv:hover {
-    fill: #009e51 !important;
-}
-
-/* Região selecionada no momento */
-path.path-ativo {
-    fill: #f5821f !important; /* Laranja MRV */
-    stroke: #fff;
-    stroke-width: 2;
-}
-
-/* --- VITRINE E BOTÕES --- */
+/* Coluna 3: Ficha Técnica (Direita) */
 #ficha-tecnica {
+    width: 350px;
     background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 15px;
+    border-radius: 8px;
+    overflow-y: auto;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
 }
 
-.vitrine-topo {
-    background: #f5821f;
-    color: white;
-    padding: 10px;
-    font-weight: bold;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
+/* --- BOTÕES E ELEMENTOS --- */
 .btRes, .separador-complexo-btn {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    font-size: 0.75rem; /* Ajustado para não explodir */
+    border: 1px solid #eee;
+    border-radius: 4px;
     cursor: pointer;
     text-align: left;
-    font-size: 0.9rem;
-    transition: 0.2s;
     display: flex;
     justify-content: space-between;
-    align-items: center;
 }
 
-.btRes { background: #fff; color: #333; }
-.separador-complexo-btn { background: #f9f9f9; color: #00713a; border-left: 5px solid #00713a; }
-
-.btRes.ativo, .separador-complexo-btn.ativo {
-    background: #00713a;
-    color: white;
-    border-color: #00713a;
-}
-
-.badge-estoque {
-    font-size: 0.7rem;
-    background: #eee;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #666;
-}
-
-/* --- TABELAS E INFOS --- */
-.tabela-mrv {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px 0;
-}
-
-.tabela-mrv th {
-    font-size: 0.7rem;
-    color: #777;
-    text-align: left;
-    padding-bottom: 5px;
-}
-
-.tabela-mrv td {
-    font-size: 1rem;
+.separador-complexo-btn { 
+    background: #f8f8f8; 
+    border-left: 4px solid #00713a; 
     font-weight: bold;
-    color: #333;
+    color: #00713a;
 }
 
-.laranja { color: #f5821f !important; }
+.btRes.ativo, .separador-complexo-btn.ativo { background: #00713a; color: white; }
 
-.info-box {
-    display: flex;
-    justify-content: space-between;
-    background: #f4f4f4;
-    padding: 10px;
-    border-radius: 6px;
-    margin-top: 10px;
-}
+path { fill: #ccc; stroke: #fff; stroke-width: 0.5; transition: 0.3s; }
+path.commrv { fill: #00713a !important; cursor: pointer; }
+path.path-ativo { fill: #f5821f !important; }
 
-.box-argumento {
-    margin-top: 15px;
-    padding: 12px;
-    border-left: 4px solid #f5821f;
-    background: #fff9f4;
-    font-size: 0.85rem;
-}
-
-.btn-maps {
-    background: #4285F4;
-    color: white;
-    text-decoration: none;
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: bold;
-}
-
-/* Responsividade básica */
-@media (max-width: 768px) {
-    #caixa-a { height: 50vh; }
-    #caixa-a svg { transform: scale(1.05); } /* Menos zoom no celular */
-}
+/* Vitrine interna */
+.vitrine-topo { background: #00713a; color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; }
+.tabela-mrv { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.tabela-mrv th { color: #666; text-align: left; }
+.tabela-mrv td { font-weight: bold; padding: 5px 0; }
+.destaque { color: #f5821f; }
