@@ -1,21 +1,4 @@
-let DADOS_PLANILHA = [];
-let pathSelecionado = null;
-let nomeSelecionado = ""; 
-let mapaAtivo = 'GSP'; 
-
-// Mapeamento fixo das colunas conforme seu print
-const COL = {
-    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
-    ESTOQUE: 5, ENDERECO: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
-    OBRA: 11, DOCUMENTOS: 15, DICA: 16, DESC_LONGA: 17, BK_CLI: 24
-};
-
-async function iniciarApp() {
-    try {
-        if (typeof MAPA_GSP !== 'undefined') desenharMapas();
-        await carregarPlanilha();
-    } catch (err) { console.error("Erro fatal:", err); }
-}
+// ... (mantenha o topo igual)
 
 async function carregarPlanilha() {
     const SHEET_ID = "15V194P2JPGCCPpCTKJsib8sJuCZPgtbNb-rtgNaLS7E";
@@ -23,102 +6,63 @@ async function carregarPlanilha() {
     
     try {
         const response = await fetch(URL_CSV);
-        const texto = await response.text();
-        const linhas = texto.split(/\r?\n/); // Divisão simples de linhas
+        let texto = await response.text();
+        const linhas = [];
+        let linhaAtual = "", dentroDeAspas = false;
+        
+        for (let i = 0; i < texto.length; i++) {
+            const char = texto[i];
+            if (char === '"') dentroDeAspas = !dentroDeAspas;
+            if ((char === '\n' || char === '\r') && !dentroDeAspas) {
+                if (linhaAtual.trim()) linhas.push(linhaAtual);
+                linhaAtual = "";
+            } else { linhaAtual += char; }
+        }
 
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
-            // Regex para separar colunas respeitando aspas
-            const colunas = linha.split(/,(?=(?:(?:[^"]*"){2})*[^ Chin]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+            const colunas = [];
+            let campo = "", aspas = false;
+            for (let i = 0; i < linha.length; i++) {
+                const char = linha[i];
+                if (char === '"') aspas = !aspas;
+                else if (char === ',' && !aspas) { colunas.push(campo.trim()); campo = ""; }
+                else { campo += char; }
+            }
+            colunas.push(campo.trim());
 
-            if (!colunas[COL.NOME]) return null;
+            const catRaw = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase() : "";
+            const ehComplexo = (catRaw.includes('COMPLEXO') || catRaw === 'N');
 
-            const categoria = (colunas[COL.CATEGORIA] || "").toUpperCase();
-            const ehComplexo = categoria.includes("COMPLEXO") || (colunas[COL.NOME].toUpperCase().includes("GRAND PRIX"));
+            // --- CORREÇÃO DE SEGURANÇA ---
+            let idExtraido = colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "";
+            // Se o ID estiver vazio (como no seu print), usa o nome curto como ID temporário para não sumir
+            if (!idExtraido && colunas[COL.NOME]) {
+                idExtraido = colunas[COL.NOME].toLowerCase().replace(/\s/g, '');
+            }
 
             return {
-                id_path: (colunas[COL.ID] || "interlagos").toLowerCase().replace(/\s/g, ''),
+                id_path: idExtraido,
                 tipo: ehComplexo ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
-                nome: colunas[COL.NOME],
-                endereco: colunas[COL.ENDERECO] || "Consulte endereço",
-                estoque: colunas[COL.ESTOQUE] || "0",
-                entrega: colunas[COL.ENTREGA] || "Sob consulta",
-                preco: colunas[COL.TIPOLOGIAS] || "Consulte",
-                p_de: colunas[COL.TIPOLOGIAS] || "-",
+                nome: colunas[COL.NOME] || "",
+                cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "REGIAO",
+                estoque: colunas[COL.ESTOQUE] || "",
+                endereco: colunas[COL.END] || "",
+                entrega: colunas[COL.ENTREGA] || "",
+                preco: colunas[COL.PRECO] || "Consulte",
+                p_de: colunas[COL.P_DE] || "-",
                 obra: colunas[COL.OBRA] || "0",
                 documentos: colunas[COL.DOCUMENTOS] || "",
                 dica: colunas[COL.DICA] || "",
                 descLonga: colunas[COL.DESC_LONGA] || "",
-                book: colunas[COL.BK_CLI] || "#"
+                book: colunas[COL.BK_CLI] || ""
             };
-        }).filter(item => item !== null);
+        }).filter(i => i.nome && i.nome.length > 2);
 
-        console.log("Imóveis carregados:", DADOS_PLANILHA.length);
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
-        
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
-    } catch (e) { 
-        console.error("Erro ao ler CSV:", e);
-        document.body.innerHTML += "<div style='color:red; position:fixed; top:0;'>Erro ao carregar dados da planilha.</div>";
-    }
+    } catch (e) { console.error("Erro CSV:", e); }
 }
 
-// Funções de clique e mapa (essenciais para funcionar)
-function renderizarNoContainer(id, dados, interativo) {
-    const container = document.getElementById(id);
-    if (!container || !dados) return;
-    const pathsHtml = dados.paths.map(p => {
-        const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
-        const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
-        const classe = (temMRV || p.id === "grandesaopaulo") && interativo ? 'commrv' : '';
-        const clique = interativo ? (p.id === "grandesaopaulo" ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique}></path>`;
-    }).join('');
-    container.innerHTML = `<svg viewBox="${dados.viewBox}"><g>${pathsHtml}</g></svg>`;
-}
-
-function desenharMapas() {
-    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP' ? MAPA_GSP : MAPA_INTERIOR), true);
-    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP' ? MAPA_INTERIOR : MAPA_GSP), false);
-}
-
-function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); }
-
-function comandoSelecao(idPath, nomePath, fonte) {
-    const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idPath.toLowerCase().replace(/\s/g, ''));
-    if (imoveis.length > 0) {
-        const selecionado = fonte || imoveis[0];
-        document.getElementById('cidade-titulo').innerText = nomePath;
-        montarVitrine(selecionado, imoveis, nomePath);
-    }
-}
-
-function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
-    const painel = document.getElementById('ficha-tecnica');
-    const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    
-    let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
-        const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
-        return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong></button>`;
-    }).join('')}</div>`;
-    
-    if (selecionado.tipo === 'N') {
-        html += `<div class="box-argumento" style="background:#f9f9f9;"><label>Sobre o Complexo</label><p>${selecionado.descLonga}</p></div>`;
-    } else {
-        html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th>PREÇO</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td>${selecionado.preco}</td></tr></tbody></table>`;
-    }
-    painel.innerHTML = html;
-}
-
-function navegarVitrine(nome, nomeRegiao) {
-    const imovel = DADOS_PLANILHA.find(i => i.nome === nome);
-    if (imovel) comandoSelecao(imovel.id_path, nomeRegiao, imovel);
-}
-
-function trocarMapas() { 
-    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
-    desenharMapas(); 
-}
-
-iniciarApp();
+// ... (Restante do código igual)
