@@ -11,28 +11,18 @@ const COL = {
 };
 
 async function iniciarApp() {
-    // 1. Ajuste da Faixa Verde (Título e Tamanho)
+    // 1. Ajuste Robusto da Faixa Verde
     const topo = document.querySelector('.topo-dashboard');
     if (topo) {
         topo.innerText = "RESIDENCIAIS MRV EM SÃO PAULO";
-        topo.style.background = "#00713a";
-        topo.style.height = "60px";        // Faixa mais larga
-        topo.style.lineHeight = "60px";    // Centraliza o texto verticalmente
-        topo.style.fontSize = "1.5rem";    // Fonte maior e imponente
-        topo.style.fontWeight = "bold";
-        topo.style.display = "block";
-        topo.style.width = "100%";
-        topo.style.textAlign = "center";
+        topo.style.setProperty("background-color", "#00713a", "important");
+        topo.style.setProperty("height", "80px", "important");
+        topo.style.setProperty("line-height", "80px", "important");
+        topo.style.setProperty("font-size", "1.6rem", "important");
+        topo.style.setProperty("display", "block", "important");
         topo.style.color = "white";
-    }
-
-    // 2. Garante que o container do mapa não corte o zoom de 15%
-    const caixaA = document.getElementById('caixa-a');
-    if (caixaA) {
-        caixaA.style.overflow = "visible"; 
-        caixaA.style.display = "flex";
-        caixaA.style.alignItems = "center";
-        caixaA.style.justifyContent = "center";
+        topo.style.fontWeight = "bold";
+        topo.style.textAlign = "center";
     }
 
     try {
@@ -48,13 +38,10 @@ async function carregarPlanilha() {
     try {
         const response = await fetch(URL_CSV);
         let texto = await response.text();
-        
-        // CORREÇÃO: Garante que a última linha (ex: Grand Prix) seja sempre lida
         if (!texto.endsWith('\n')) texto += '\n';
 
         const linhas = [];
         let linhaAtual = "", dentroDeAspas = false;
-        
         for (let i = 0; i < texto.length; i++) {
             const char = texto[i];
             if (char === '"') dentroDeAspas = !dentroDeAspas;
@@ -74,13 +61,10 @@ async function carregarPlanilha() {
                 else { campo += char; }
             }
             colunas.push(campo.trim());
-
             const catLimpa = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase() : "";
-            const ehComplexo = catLimpa.includes('COMPLEXO');
-
             return {
                 id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
-                tipo: ehComplexo ? 'N' : 'R',
+                tipo: catLimpa.includes('COMPLEXO') ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
                 nome: colunas[COL.NOME] || "",
                 cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "",
@@ -124,13 +108,10 @@ function renderizarNoContainer(id, dados, interativo) {
         return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
     }).join('');
 
-    // AUMENTO DE 15% NO MAPA PRINCIPAL (CAIXA-A)
+    // Zoom de 15% aplicado via scale
     const zoomStyle = interativo ? 'style="transform: scale(1.15); transform-origin: center; width: 100%; height: 100%;"' : 'style="width: 100%; height: 100%;"';
 
-    container.innerHTML = `
-        <svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}>
-            <g transform="${dados.transform || ''}">${pathsHtml}</g>
-        </svg>`;
+    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
 }
 
 function desenharMapas() {
@@ -142,31 +123,37 @@ function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); 
 
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
-    const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
     
+    // CORREÇÃO: Verifica se o imóvel clicado pertence ao mapa que NÃO está visível
+    const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+    const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+
+    if (estaNaGSP && mapaAtivo !== 'GSP') { trocarMapas(); }
+    else if (estaNoInterior && mapaAtivo !== 'INTERIOR') { trocarMapas(); }
+
+    const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
-        nomeSelecionado = nomePath;
-        document.getElementById('cidade-titulo').innerText = nomePath;
+        nomeSelecionado = nomePath || selecionado.cidade;
+        document.getElementById('cidade-titulo').innerText = nomeSelecionado;
         
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
         const el = document.getElementById(`caixa-a-${idPath}`);
         if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
         
         document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
-        
         const idBotao = `btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
         const btnClicado = document.getElementById(idBotao);
         if (btnClicado) btnClicado.classList.add('ativo');
         
-        montarVitrine(selecionado, imoveis, nomePath);
+        montarVitrine(selecionado, imoveis, nomeSelecionado);
     }
 }
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    const urlMaps = `http://google.com/maps?q=${encodeURIComponent(selecionado.endereco)}`;
+    const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
     
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
                 const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
