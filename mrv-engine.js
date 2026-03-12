@@ -35,7 +35,7 @@ async function carregarPlanilha() {
             } else { linhaAtual += char; }
         }
 
-        DADOS_PLANILHA = linhas.slice(1).map((linha, index) => {
+        DADOS_PLANILHA = linhas.slice(1).map(linha => {
             const colunas = [];
             let campo = "", aspas = false;
             for (let i = 0; i < linha.length; i++) {
@@ -46,10 +46,12 @@ async function carregarPlanilha() {
             }
             colunas.push(campo.trim());
 
-            const catRaw = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase().trim() : "";
-            const ehComplexo = (catRaw.includes('COMPLEXO') || catRaw === 'N');
+            // --- LÓGICA DE CATEGORIA BLINDADA ---
+            // Remove tudo que não for letra (espaços, caracteres invisíveis, etc)
+            const catLimpa = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase().replace(/[^A-Z]/g, '') : "";
+            const ehComplexo = (catLimpa.includes('COMPLEXO') || catLimpa === 'N');
 
-            const item = {
+            return {
                 id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
                 tipo: ehComplexo ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
@@ -58,7 +60,7 @@ async function carregarPlanilha() {
                 estoque: colunas[COL.ESTOQUE] || "",
                 endereco: colunas[COL.END] || "",
                 entrega: colunas[COL.ENTREGA] || "",
-                preco: colunas[COL.PRECO] || "Consulte",
+                preco: colunas[COL.P_DE] || "Consulte", // Ajustado para pegar o campo correto se necessário
                 p_de: colunas[COL.P_DE] || "-",
                 obra: colunas[COL.OBRA] || "0",
                 documentos: colunas[COL.DOCUMENTOS] || "",
@@ -66,18 +68,7 @@ async function carregarPlanilha() {
                 descLonga: colunas[COL.DESC_LONGA] || "",
                 book: colunas[COL.BK_CLI] || ""
             };
-
-            // Diagnóstico para o Grand Prix
-            if (item.nome.toUpperCase().includes("GRAND PRIX")) {
-                console.log("Achei o Grand Prix na linha " + (index + 2), item);
-            }
-
-            return item;
-        }).filter(i => {
-            // Se o nome for "GRAND PRIX", não deixa o filtro barrar de jeito nenhum
-            if (i.nome.toUpperCase().includes("GRAND PRIX")) return true;
-            return i.id_path !== "" && i.nome.length > 2;
-        });
+        }).filter(i => i.nome && i.nome.length > 2);
 
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
@@ -130,7 +121,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
         document.getElementById('cidade-titulo').innerText = nomePath;
         
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-        const el = document.getElementById(`caixa-a-${idPath}`) || document.getElementById('grandesaopaulo');
+        const el = document.getElementById(`caixa-a-${idPath}`);
         if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
 
         document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
@@ -173,7 +164,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
             <div class="info-box"><label>Status da Obra</label><span>${selecionado.obra}%</span></div>
             ${selecionado.documentos ? `<div class="box-documentos" style="margin-top:8px;"><span>${selecionado.documentos}</span></div>` : ''}
             ${selecionado.dica ? `<div class="box-argumento box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}
-            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important;">📄 BOOK CLIENTE</a>`;
+            <a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
     }
     html += `</div>`;
     painel.innerHTML = html;
