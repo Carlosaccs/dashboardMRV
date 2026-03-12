@@ -3,10 +3,12 @@ let pathSelecionado = null;
 let nomeSelecionado = ""; 
 let mapaAtivo = 'GSP'; 
 
+// Mapeamento atualizado conforme sua lista de colunas
 const COL = {
     ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
     ESTOQUE: 5, END: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
-    P_DE: 9, P_ATE: 10, OBRA: 11, DOCUMENTOS: 15, 
+    P_DE: 9, P_ATE: 10, OBRA: 11, LIMITADOR: 12, 
+    REG: 13, CASA_PAULISTA: 14, DOCUMENTOS: 15, 
     DICA: 16, DESC_LONGA: 17, BK_CLI: 24
 };
 
@@ -59,6 +61,9 @@ async function carregarPlanilha() {
                 endereco: colunas[COL.END] || "",
                 entrega: colunas[COL.ENTREGA] || "",
                 tipologias: colunas[COL.TIPOLOGIAS] || "-",
+                limitador: colunas[COL.LIMITADOR] || "-",
+                reg_info: colunas[COL.REG] || "-",
+                casa_paulista: colunas[COL.CASA_PAULISTA] || "NÃO POSSUI",
                 preco: colunas[COL.P_DE] || "Consulte",
                 p_de: colunas[COL.P_DE] || "-",
                 obra: colunas[COL.OBRA] || "0",
@@ -77,12 +82,6 @@ async function carregarPlanilha() {
 
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
-    const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-    const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
-
-    if (estaNaGSP && mapaAtivo !== 'GSP') { trocarMapas(); }
-    else if (estaNoInterior && mapaAtivo !== 'INTERIOR') { trocarMapas(); }
-
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
@@ -127,47 +126,54 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         html += `<div class="box-argumento" style="border-left-color: #00713a; background:#f9f9f9; margin-top:0; border-radius:0 0 4px 4px;"><label>Sobre o Complexo</label>${desc}</div>`;
     
     } else {
-        // --- RESIDENCIAL (Layout Novo do Desenho) ---
-        // Faixa Laranja com NOME_FULL
-        html += `<div style="background:#ff8c00; color:#000; text-align:center; padding:10px; font-weight:bold; border-radius:4px; font-size:0.9rem; text-transform:uppercase; margin-bottom:10px;">${selecionado.nomeFull}</div>`;
-        
-        // Endereço e Maps
+        // --- RESIDENCIAL (Novo Layout) ---
+        html += `<div style="background:#ffbc00; color:#000; text-align:center; padding:10px; font-weight:bold; border-radius:4px; font-size:0.9rem; text-transform:uppercase; margin-bottom:10px;">${selecionado.nomeFull}</div>`;
         html += `<div style="padding: 5px 0 10px 0;"><p style="font-size:0.75rem; color:#000; font-weight:bold; display:flex; justify-content:space-between; align-items:center;"><span>${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p></div>`;
 
-        // Grid de Informações (Baseado no seu desenho)
+        // Linha 1: Região | Entrega | Obra
         html += `
-        <div class="grid-info">
-            <div class="card-mini"><label>REG</label><span>${selecionado.cidade.toUpperCase()}</span></div>
+        <div class="linha-cards">
+            <div class="card-mini"><label>REGIÃO</label><span>${selecionado.reg_info}</span></div>
             <div class="card-mini"><label>ENTREGA</label><span>${selecionado.entrega}</span></div>
             <div class="card-mini"><label>OBRA</label><span>${selecionado.obra}%</span></div>
-            <div class="card-full"><label>PLANTAS</label><span>${selecionado.tipologias}</span></div>
-            <div class="card-full"><label>ESTOQUE</label><span>restam ${selecionado.estoque} un.</span></div>
         </div>`;
 
-        // Destaque de Documentos / Campanha (Se houver)
+        // Linha 2: Plantas | Estoque
+        html += `
+        <div class="linha-cards">
+            <div class="card-half"><label>PLANTAS</label><span>${selecionado.tipologias}</span></div>
+            <div class="card-half"><label>ESTOQUE</label><span>restam ${selecionado.estoque} un.</span></div>
+        </div>`;
+
+        // Linha 3: Limitador | Casa Paulista
+        html += `
+        <div class="linha-cards">
+            <div class="card-half"><label>LIMITADOR</label><span>${selecionado.limitador}</span></div>
+            <div class="card-half"><label>CASA PAULISTA</label><span>${selecionado.casa_paulista}</span></div>
+        </div>`;
+
+        // Documentos em Vermelho
         if(selecionado.documentos) {
             html += `<div style="text-align:center; color:#e31010; font-weight:bold; font-size:0.8rem; padding:10px 0; text-transform:uppercase;">${selecionado.documentos}</div>`;
         }
 
-        // Tabela de Preço Simplificada
+        // Tabela de Preço
         html += `
         <div class="box-preco">
             <div class="col-preco">TIPOLOGIA<br><strong>${selecionado.p_de}</strong></div>
             <div class="col-preco destaque">MENOR PREÇO<br><strong>R$ ${selecionado.preco}</strong></div>
         </div>`;
 
-        // Dica e Book
         if(selecionado.dica) {
             html += `<div class="box-argumento box-dica" style="margin-top:10px;"><label>DICA DO CORRETOR</label><p>${selecionado.dica}</p></div>`;
         }
         
         html += `<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:40px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
     }
-    
     painel.innerHTML = html;
 }
 
-// Funções de Mapa (Mantidas intactas para não "estourar")
+// Funções de Mapa e Utilidades
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     if (!container || !dados) return;
