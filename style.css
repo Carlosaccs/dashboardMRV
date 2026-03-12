@@ -1,5 +1,5 @@
 :root {
-    --mrv-verde: #00713a; /* Ajustado para o tom oficial das fotos */
+    --mrv-verde: #00713a;
     --mrv-laranja: #ff8c00;
     --vermelho-mrv: #e31010;
     --texto-escuro: #333;
@@ -10,22 +10,21 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 /* FAIXA VERDE CENTRALIZADA */
 .header { 
-    background: var(--mrv-verde) !important; 
+    background-color: var(--mrv-verde) !important; 
     color: white !important; 
-    height: 48px !important; 
-    display: flex !important;
-    align-items: center !important;    /* Meio vertical */
-    justify-content: center !important; /* Meio horizontal */
-    font-weight: bold; 
-    font-size: 1.3rem; 
-    text-align: center;
+    height: 56px !important; 
+    line-height: 56px !important; 
+    font-size: 1.4rem !important;
+    font-weight: bold !important; 
+    text-align: center !important;
     width: 100%;
+    display: block !important;
 }
 
 .wrapper { 
     display: flex; 
     flex: 1; 
-    height: calc(100vh - 48px); /* Desconta a faixa exata */
+    height: calc(100vh - 56px); 
     overflow: hidden; 
 }
 
@@ -47,12 +46,9 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     text-align: left;
 }
 
-/* Estilo para COMPLEXO */
 .separador-complexo-btn { background: #333 !important; color: white !important; justify-content: center !important; font-weight: bold; text-transform: uppercase; border: none !important; }
-.separador-complexo-btn:hover { background: #444 !important; }
-
-/* Estilo para RESIDENCIAL */
 .btRes { background: #fff; border-left: 4px solid var(--mrv-verde) !important; justify-content: space-between; color: var(--texto-escuro); }
+
 .btRes:hover { background-color: #e0e0e0 !important; border: 1px solid var(--mrv-verde) !important; }
 .btRes.ativo { background-color: var(--mrv-laranja) !important; color: white !important; border: 1px solid var(--mrv-verde) !important; }
 .btRes.ativo strong { color: white !important; }
@@ -63,7 +59,6 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 .conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
 #cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.7rem; color: #555; height: 28px; display: flex; align-items: center; justify-content: center; }
 
-/* CAIXA DO MAPA SEM COR E SEM BORDAS */
 #caixa-a { 
     flex: 1.3; 
     display: flex; 
@@ -71,8 +66,8 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
     justify-content: center; 
     padding: 10px; 
     overflow: hidden; 
-    background: transparent !important; /* Removido o cinza */
-    border: none !important;            /* Removida a borda inferior */
+    background: transparent !important; 
+    border: none !important; 
 }
 
 #caixa-b { flex: 0.45; display: flex; align-items: center; justify-content: center; padding: 10px; background: white; overflow: hidden; }
@@ -99,9 +94,9 @@ path.commrv:hover, path.path-ativo { fill: var(--mrv-laranja) !important; stroke
 .info-box label { font-size: 0.55rem; color: #666; font-weight: bold; text-transform: uppercase; }
 .info-box span { font-size: 0.7rem; font-weight: 700; color: #333; }
 
-.box-argumento { margin-top: 6px; padding: 8px; border-radius: 4px; border-left: 4px solid #ddd; }
-.box-argumento label { display: block; font-size: 0.52rem; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-.box-argumento p { font-size: 0.72rem; color: #444; line-height: 1.3; }
+.box-argumento { margin-top: 6px; padding: 10px; border-radius: 4px; border-left: 4px solid #ddd; }
+.box-argumento label { display: block; font-size: 0.52rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+.box-argumento p { font-size: 0.72rem; color: #444; line-height: 1.4; }
 .box-dica { background: #fffde6; border-left-color: #f3d221; }
 
 .btn-maps { display: inline-flex; align-items: center; background: #4285F4; color: white !important; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
