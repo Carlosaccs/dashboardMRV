@@ -4,27 +4,13 @@ let nomeSelecionado = "";
 let mapaAtivo = 'GSP'; 
 
 const COL = {
-    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
+    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, // Coluna E
     ESTOQUE: 5, END: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
     P_DE: 9, P_ATE: 10, OBRA: 11, DOCUMENTOS: 15, 
     DICA: 16, DESC_LONGA: 17, BK_CLI: 24
 };
 
 async function iniciarApp() {
-    // 1. Ajuste Robusto da Faixa Verde
-    const topo = document.querySelector('.topo-dashboard');
-    if (topo) {
-        topo.innerText = "RESIDENCIAIS MRV EM SÃO PAULO";
-        topo.style.setProperty("background-color", "#00713a", "important");
-        topo.style.setProperty("height", "80px", "important");
-        topo.style.setProperty("line-height", "80px", "important");
-        topo.style.setProperty("font-size", "1.6rem", "important");
-        topo.style.setProperty("display", "block", "important");
-        topo.style.color = "white";
-        topo.style.fontWeight = "bold";
-        topo.style.textAlign = "center";
-    }
-
     try {
         if (typeof MAPA_GSP !== 'undefined') desenharMapas();
         await carregarPlanilha();
@@ -62,12 +48,14 @@ async function carregarPlanilha() {
             }
             colunas.push(campo.trim());
             const catLimpa = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase() : "";
+            
             return {
                 id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
                 tipo: catLimpa.includes('COMPLEXO') ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
                 nome: colunas[COL.NOME] || "",
-                cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "",
+                nomeFull: colunas[COL.NOME_FULL] || colunas[COL.NOME] || "", // Captura Coluna E
+                cidade: colunas[COL.ID] || "",
                 estoque: colunas[COL.ESTOQUE] || "",
                 endereco: colunas[COL.END] || "",
                 entrega: colunas[COL.ENTREGA] || "",
@@ -87,44 +75,8 @@ async function carregarPlanilha() {
     } catch (e) { console.error("Erro CSV:", e); }
 }
 
-function renderizarNoContainer(id, dados, interativo) {
-    const container = document.getElementById(id);
-    if (!container || !dados) return;
-    
-    if (!interativo) { 
-        container.style.cursor = "pointer"; 
-        container.onclick = trocarMapas; 
-    } else { 
-        container.onclick = null; 
-    }
-
-    const pathsHtml = dados.paths.map(p => {
-        const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
-        const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
-        const isGSP = p.id.toLowerCase() === "grandesaopaulo";
-        const clique = interativo ? (isGSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
-        const hover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
-        const classe = (temMRV || isGSP) && interativo ? 'commrv' : '';
-        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
-    }).join('');
-
-    // Zoom de 15% aplicado via scale
-    const zoomStyle = interativo ? 'style="transform: scale(1.15); transform-origin: center; width: 100%; height: 100%;"' : 'style="width: 100%; height: 100%;"';
-
-    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
-}
-
-function desenharMapas() {
-    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR, true);
-    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP, false);
-}
-
-function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); }
-
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
-    
-    // CORREÇÃO: Verifica se o imóvel clicado pertence ao mapa que NÃO está visível
     const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
     const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
 
@@ -138,7 +90,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
         document.getElementById('cidade-titulo').innerText = nomeSelecionado;
         
         if (pathSelecionado) pathSelecionado.classList.remove('path-ativo');
-        const el = document.getElementById(`caixa-a-${idPath}`);
+        const el = document.getElementById(`caixa-a-${idBusca}`);
         if (el) { el.classList.add('path-ativo'); pathSelecionado = el; }
         
         document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
@@ -152,43 +104,49 @@ function comandoSelecao(idPath, nomePath, fonte) {
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
+    if(!painel) return;
+    
     const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
     const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
     
-    let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
+    let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div>`;
+    
+    // Lista de botões
+    html += `<div style="margin-bottom:10px;">${listaSuperior.map(item => {
                 const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
                 return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong> ${item.tipo === 'R' ? obterHtmlEstoque(item.estoque, item.tipo) : ''}</button>`;
-            }).join('')}</div><div style="padding-top:8px;"><p style="font-size:0.65rem; color:#444; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p>`;
-    
+            }).join('')}</div>`;
+
+    // LINHA DIVISÓRIA
+    html += `<hr class="divisor-vitrine">`;
+
     if (selecionado.tipo === 'N') {
-        const desc = (selecionado.descLonga || "").split('\n').map(p => `<p style="margin-bottom:8px;">${p.trim()}</p>`).join('');
-        html += `<div class="box-argumento" style="border-left-color: #00713a; background:#f9f9f9;"><label>Sobre o Complexo</label>${desc}</div>`;
+        // --- LAYOUT COMPLEXO ---
+        html += `<div class="titulo-complexo-vitrine">${selecionado.nomeFull}</div>`;
+        
+        html += `<div style="padding: 5px 0 10px 0;">
+                    <p style="font-size:0.65rem; color:#666; display:flex; justify-content:space-between; align-items:center;">
+                        <span>📍 ${selecionado.endereco}</span>
+                        <a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a>
+                    </p>
+                 </div>`;
+
+        const desc = (selecionado.descLonga || "").split('\n').map(p => `<p>${p.trim()}</p>`).join('');
+        html += `<div class="box-argumento-full"><label>Sobre o Complexo</label>${desc}</div>`;
+    
     } else {
+        // --- LAYOUT RESIDENCIAL ---
+        html += `<div style="padding-bottom:8px;"><p style="font-size:0.65rem; color:#444; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p></div>`;
         html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th class="laranja">PREÇO A PARTIR</th><th>ENTREGA</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td class="destaque">${selecionado.preco}</td><td>${selecionado.entrega}</td></tr></tbody></table><div class="info-box"><label>Status da Obra</label><span>${selecionado.obra}%</span></div>${selecionado.documentos ? `<div class="box-documentos" style="margin-top:8px;"><span>${selecionado.documentos}</span></div>` : ''}${selecionado.dica ? `<div class="box-argumento box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
     }
     painel.innerHTML = html;
 }
 
+// ... (Restante das funções: desenharMapas, trocarMapas, renderizarNoContainer, etc. seguem o padrão anterior)
+
 function navegarVitrine(nome, nomeRegiao) { 
     const imovel = DADOS_PLANILHA.find(i => i.nome === nome); 
     if (imovel) comandoSelecao(imovel.id_path, nomeRegiao, imovel); 
-}
-
-function hoverNoMapa(nome) { document.getElementById('cidade-titulo').innerText = nome; }
-function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "Selecione uma região"; }
-
-function trocarMapas() { 
-    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
-    desenharMapas(); 
-    limparInterface(); 
-}
-
-function limparInterface() {
-    nomeSelecionado = ""; 
-    pathSelecionado = null;
-    document.getElementById('cidade-titulo').innerText = "Selecione uma região no mapa ou na lista";
-    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
-    document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
 }
 
 function obterHtmlEstoque(valor, tipo) { 
@@ -197,5 +155,44 @@ function obterHtmlEstoque(valor, tipo) {
     if (clean === "VENDIDO" || clean === "0") return `<span class="badge-estoque" style="color:#999">VENDIDO</span>`; 
     return `<span class="badge-estoque">RESTAM ${valor} UN.</span>`; 
 }
+
+function renderizarNoContainer(id, dados, interativo) {
+    const container = document.getElementById(id);
+    if (!container || !dados) return;
+    if (!interativo) { container.style.cursor = "pointer"; container.onclick = trocarMapas; } else { container.onclick = null; }
+    const pathsHtml = dados.paths.map(p => {
+        const idPathNormalizado = p.id.toLowerCase().replace(/\s/g, '');
+        const temMRV = DADOS_PLANILHA.some(d => d.id_path === idPathNormalizado);
+        const isGSP = p.id.toLowerCase() === "grandesaopaulo";
+        const clique = interativo ? (isGSP ? `onclick="trocarMapas()"` : `onclick="cliqueNoMapa('${p.id}', '${p.name}', ${temMRV})"`) : "";
+        const hover = interativo ? `onmouseover="hoverNoMapa('${p.name}')" onmouseout="resetTitulo()"` : "";
+        const classe = (temMRV || isGSP) && interativo ? 'commrv' : '';
+        return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
+    }).join('');
+    const zoomStyle = interativo ? 'style="transform: scale(1.15); transform-origin: center; width: 100%; height: 100%;"' : 'style="width: 100%; height: 100%;"';
+    container.innerHTML = `<svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}><g transform="${dados.transform || ''}">${pathsHtml}</g></svg>`;
+}
+
+function desenharMapas() {
+    renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR, true);
+    renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP, false);
+}
+
+function trocarMapas() { 
+    mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
+    desenharMapas(); 
+    limparInterface(); 
+}
+
+function limparInterface() {
+    nomeSelecionado = ""; pathSelecionado = null;
+    document.getElementById('cidade-titulo').innerText = "Selecione uma região no mapa ou na lista";
+    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
+    document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
+}
+
+function hoverNoMapa(nome) { document.getElementById('cidade-titulo').innerText = nome; }
+function resetTitulo() { document.getElementById('cidade-titulo').innerText = nomeSelecionado || "Selecione uma região"; }
+function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); }
 
 iniciarApp();
