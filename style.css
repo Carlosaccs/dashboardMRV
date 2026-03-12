@@ -1,54 +1,31 @@
-:root {
-    --mrv-verde: #00713a;
-    --mrv-laranja: #ff8c00;
-    --texto-escuro: #333;
-}
-
-/* ... (mantenha o restante do seu CSS anterior) ... */
-
-/* NOVA ESTRUTURA DA VITRINE */
-.divisor-vitrine {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 12px 0;
-    width: 100%;
-}
-
-.titulo-complexo-vitrine {
-    background: #333 !important;
-    color: white !important;
+/* Faixa de Título para Residencial (seguindo o padrão do Complexo) */
+.titulo-residencial-vitrine {
+    background: #444; /* Um tom levemente diferente do complexo (#333) */
+    color: white;
     padding: 10px;
     font-weight: bold;
     text-align: center;
     font-size: 0.85rem;
-    border-radius: 4px 4px 0 0; /* Arredonda só em cima para colar na caixa */
+    border-radius: 4px 4px 0 0;
     text-transform: uppercase;
     width: 100%;
 }
 
-.box-argumento-full {
-    margin-top: 0; 
-    padding: 12px;
-    background: #f9f9f9;
-    border-radius: 0 0 4px 4px; /* Arredonda só embaixo */
-    border-left: 4px solid var(--mrv-verde);
-    border-right: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+/* Ajuste na tabela para ela colar no título */
+.tabela-mrv {
     width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 10px 0; /* Tiramos a margem do topo para colar no título */
+    font-size: 0.7rem;
+    border: 1px solid #ddd;
 }
 
-.box-argumento-full label {
-    display: block;
-    font-size: 0.6rem;
-    font-weight: bold;
-    color: #888;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-}
-
-.box-argumento-full p {
-    font-size: 0.75rem;
-    color: #444;
-    line-height: 1.4;
-    margin-bottom: 10px;
+/* Espaçamento do endereço */
+.endereco-vitrine {
+    padding: 8px 0;
+    font-size: 0.65rem;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
