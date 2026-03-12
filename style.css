@@ -2,21 +2,19 @@
     --mrv-verde: #00713a;
     --mrv-laranja: #ffbc00;
     --vermelho-mrv: #e31010;
-    --texto-escuro: #333;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; }
 
-/* Header */
 .header { 
-    background-color: var(--mrv-verde) !important; 
-    color: white !important; 
-    height: 56px !important; 
-    line-height: 56px !important; 
-    font-size: 1.4rem !important;
-    font-weight: bold !important; 
-    text-align: center !important;
+    background-color: var(--mrv-verde); 
+    color: white; 
+    height: 56px; 
+    line-height: 56px; 
+    font-size: 1.4rem;
+    font-weight: bold; 
+    text-align: center;
     width: 100%;
 }
 
@@ -24,57 +22,76 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; b
 
 /* Sidebar Esquerda */
 .sidebar-esq { width: 280px; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px 0; background: #f8f9fa; flex-shrink: 0; }
-.separador-complexo-btn, .btRes {
-    width: 92% !important;
-    margin: 4px auto !important;
-    min-height: 28px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 4px 8px !important;
-    border-radius: 4px;
-    font-size: 0.68rem;
-    cursor: pointer;
-    border: 1px solid #ddd;
-    text-align: left;
+.btRes {
+    width: 92%; margin: 4px auto; min-height: 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 8px; border-radius: 4px; font-size: 0.68rem;
+    cursor: pointer; border: 1px solid #ddd; background: #fff;
+    border-left: 4px solid var(--mrv-verde);
 }
-.separador-complexo-btn { background: #333 !important; color: white !important; justify-content: center !important; font-weight: bold; text-transform: uppercase; border: none !important; }
-.btRes { background: #fff; border-left: 4px solid var(--mrv-verde) !important; justify-content: space-between; color: var(--texto-escuro); }
-.btRes.ativo { background-color: var(--mrv-laranja) !important; color: white !important; }
-.badge-estoque { font-size: 0.62rem; font-weight: bold; }
+.btRes.ativo { background-color: var(--mrv-laranja); color: white; }
 
-/* Centro (Mapas) */
-.conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
-#cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.7rem; color: #555; height: 28px; display: flex; align-items: center; justify-content: center; }
-#caixa-a { flex: 1.3; display: flex; align-items: center; justify-content: center; padding: 10px; }
-#caixa-b { flex: 0.45; display: flex; align-items: center; justify-content: center; padding: 10px; background: white; }
-svg { width: 100% !important; height: 100% !important; }
+/* Centro (Mapas) - ONDE ESTAVA O ERRO */
+.conteudo-centro { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    background: #fff; 
+    overflow: hidden;
+    align-items: center; /* Centraliza os mapas horizontalmente */
+}
+
+#cidade-titulo { 
+    background: #eee; width: 100%; padding: 4px; 
+    text-align: center; font-weight: bold; font-size: 0.7rem; 
+    color: #555; height: 28px; 
+}
+
+#caixa-a { 
+    flex: 3; /* Mapa de cima maior */
+    width: 100%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 15px;
+    overflow: hidden;
+}
+
+#caixa-b { 
+    flex: 1; /* Mapa de baixo menor */
+    width: 100%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 5px; 
+    background: #fdfdfd;
+    border-top: 1px solid #eee;
+}
+
+/* Garante que o SVG respeite o tamanho da div pai */
+svg { 
+    max-width: 100%; 
+    max-height: 100%; 
+    width: auto !important; 
+    height: auto !important; 
+}
+
 path { fill: #777; stroke: #ffffff; stroke-width: 0.8; transition: 0.2s; }
-path.commrv { fill: var(--mrv-verde) !important; cursor: pointer; }
-path.commrv:hover, path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1px !important; }
+path.commrv { fill: var(--mrv-verde); cursor: pointer; }
+path.commrv:hover, path.path-ativo { fill: var(--mrv-laranja); stroke: #000; stroke-width: 1px; }
 
 /* Sidebar Direita (Vitrine) */
 .sidebar-dir { width: 480px; border-left: 1px solid #ddd; overflow-y: auto; padding: 15px; flex-shrink: 0; background: #fff; }
-.vitrine-topo { background: var(--mrv-verde); color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.75rem; text-transform: uppercase; }
 
-/* Layout de Cards Horizontais */
-.faixa-laranja { background: var(--mrv-laranja); color: #000; text-align: center; padding: 10px; font-weight: 900; border-radius: 4px; font-size: 0.95rem; text-transform: uppercase; margin-bottom: 10px; }
-.linha-end { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.75rem; font-weight: bold; color: #000; }
-.linha-cards { display: flex; gap: 8px; margin-bottom: 8px; width: 100%; }
+/* Tabelas e Cards (Layout anterior mantido) */
+.faixa-laranja { background: var(--mrv-laranja); color: #000; text-align: center; padding: 10px; font-weight: 900; border-radius: 4px; margin-bottom: 10px; }
+.linha-cards { display: flex; gap: 8px; margin-bottom: 8px; }
 .card-mini, .card-half { background: #f2f2f2; flex: 1; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-.card-mini label, .card-half label { font-size: 0.65rem; color: var(--mrv-verde); font-weight: bold; text-transform: uppercase; }
-.card-mini span, .card-half span { font-size: 0.75rem; font-weight: bold; color: #333; }
+.card-mini label { font-size: 0.6rem; color: var(--mrv-verde); font-weight: bold; }
+.card-mini span { font-size: 0.75rem; font-weight: bold; }
 
-/* Tabela de Preços Dinâmica */
-.tabela-precos { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.75rem; border: 1px solid #eee; }
-.tabela-precos th { background: #f2f2f2; padding: 8px; color: #333; font-weight: bold; border-bottom: 2px solid #ddd; text-align: center; }
-.tabela-precos th.head-destaque { background: var(--mrv-laranja); color: #000; }
+.tabela-precos { width: 100%; border-collapse: collapse; font-size: 0.75rem; border: 1px solid #eee; }
+.tabela-precos th { background: #f2f2f2; padding: 8px; border-bottom: 2px solid #ddd; }
+.tabela-precos th.destaque { background: var(--mrv-laranja); }
 .tabela-precos td { padding: 8px; text-align: center; border-bottom: 1px solid #eee; }
-.tabela-precos td.col-destaque { background: #fff8e1; font-weight: bold; color: var(--mrv-verde); }
-
-/* Complementos */
-.doc-vermelho { color: var(--vermelho-mrv); font-weight: bold; text-align: center; font-size: 0.85rem; margin: 10px 0; text-transform: uppercase; }
-.box-dica { background: #fffde6; padding: 10px; border-radius: 4px; border-left: 4px solid #f3d221; margin-top: 10px; }
-.box-dica label { display: block; font-size: 0.6rem; font-weight: bold; color: var(--mrv-verde); margin-bottom: 4px; }
-.box-dica p { font-size: 0.75rem; line-height: 1.3; color: #444; }
-.btn-maps { background: #4285F4; color: white !important; text-decoration: none; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
-.btn-book { display: flex; align-items: center; justify-content: center; background: var(--mrv-verde); color: white !important; text-decoration: none; height: 42px; border-radius: 4px; font-weight: bold; margin-top: 15px; }
+.btn-book { display: flex; align-items: center; justify-content: center; background: var(--mrv-verde); color: white; height: 42px; border-radius: 4px; font-weight: bold; text-decoration: none; margin-top: 15px; }
