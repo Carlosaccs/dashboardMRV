@@ -4,49 +4,23 @@
     <meta charset="UTF-8">
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard MRV SP - v9.2</title>
+    <title>Dashboard MRV SP - v9.3</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilo para o Título do Complexo ser clicável sem perder o visual */
-        .separador-complexo-btn {
-            background: #333;
-            color: white;
-            padding: 10px;
-            font-size: 0.75rem;
-            text-align: center;
-            margin: 15px 0 5px 0;
-            border-radius: 4px;
-            font-weight: bold;
-            text-transform: uppercase;
-            width: 100%;
-            border: none;
-            display: block;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        /* Ajustes finos de transição para os botões */
+        .btRes, .separador-complexo-btn {
+            transition: all 0.2s ease-in-out;
         }
-
-        .separador-complexo-btn:hover {
-            background: #444;
-            transform: translateY(-2px); /* Efeito de levante no hover */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .separador-complexo-btn:active {
-            transform: translateY(0);
-            background: #222;
-        }
-
         .notranslate { translate: no !important; }
     </style>
 </head>
 <body>
 
-    <div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v9.2</div>
+    <div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v9.3</div>
 
     <div class="wrapper">
         <aside class="sidebar-esq" id="lista-imoveis">
-            <div style="padding:20px; color:#666;">Carregando...</div>
+            <div style="padding:20px; color:#666; font-size: 0.8rem;">Carregando imóveis...</div>
         </aside>
         
         <main class="conteudo-centro">
@@ -58,7 +32,7 @@
         <aside class="sidebar-dir" id="ficha-tecnica">
             <div style="text-align:center; color:#ccc; margin-top:100px;">
                 <p style="font-size: 30px;">📍</p>
-                <p>Selecione um empreendimento</p>
+                <p>Selecione uma região no mapa ou na lista ao lado</p>
             </div>
         </aside>
     </div>
@@ -67,6 +41,7 @@
     <script src="mrv-engine.js"></script>
     
     <script>
+        // Função que constrói a lista da esquerda com os IDs corretos para o destaque
         function gerarListaLateral() {
             const list = document.getElementById('lista-imoveis');
             if (!list) return;
@@ -75,32 +50,31 @@
             DADOS_PLANILHA.forEach(item => {
                 if (!item.nome || item.nome.length > 45) return;
 
-                if (item.tipo === 'N') {
-                    // Criamos o Complexo como um BOTÃO em vez de uma DIV
-                    const btnComplexo = document.createElement('button');
-                    btnComplexo.className = "separador-complexo-btn notranslate";
-                    btnComplexo.innerText = item.nome;
-                    
-                    // Ele recebe a mesma função de clique dos outros, 
-                    // abrindo a vitrine do grupo todo
-                    btnComplexo.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
-                    
-                    list.appendChild(btnComplexo);
-                } else {
-                    const btn = document.createElement('button');
-                    btn.className = `btRes notranslate`;
-                    const idBotao = `btn-esq-${item.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
-                    btn.id = idBotao;
-                    btn.innerHTML = `<strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
-                    
-                    btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
-                    list.appendChild(btn);
-                }
+                const btn = document.createElement('button');
+                
+                // CRUCIAL: Criar o ID que o mrv-engine.js vai usar para colocar o fundo laranja
+                // Remove caracteres especiais e espaços para o ID ser válido
+                const idLimpo = item.nome.replace(/[^a-zA-Z0-9]/g, '-');
+                btn.id = `btn-esq-${idLimpo}`;
+                
+                // Define a classe base (Complexo ou Residencial)
+                btn.className = item.tipo === 'N' ? "separador-complexo-btn notranslate" : "btRes notranslate";
+                
+                // Conteúdo do botão
+                btn.innerHTML = `<strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
+                
+                // Ação de clique: seleciona no mapa e na vitrine
+                btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
+                
+                list.appendChild(btn);
             });
         }
 
+        // Inicia o App assim que a página carrega
         window.onload = function() {
-            if (typeof iniciarApp === 'function') iniciarApp();
+            if (typeof iniciarApp === 'function') {
+                iniciarApp();
+            }
         };
     </script>
 </body>
