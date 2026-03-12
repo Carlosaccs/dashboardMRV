@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard MRV SP - v9.7</title>
+    <title>Dashboard MRV SP - v9.4</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v9.7</div>
+    <div class="header">DASHBOARD MRV SP - GESTÃO DE ESTOQUE v9.4</div>
 
     <div class="wrapper">
         <aside class="sidebar-esq" id="lista-imoveis">
@@ -17,7 +17,7 @@
         </aside>
         
         <main class="conteudo-centro">
-            <div id="cidade-titulo">Selecione uma região no mapa ou na lista</div> 
+            <div id="cidade-titulo">Passe o mouse ou selecione uma cidade</div> 
             <div id="caixa-a"></div> 
             <div id="caixa-b"></div> 
         </main>
@@ -25,7 +25,7 @@
         <aside class="sidebar-dir" id="ficha-tecnica">
             <div style="text-align:center; color:#ccc; margin-top:100px;">
                 <p style="font-size: 30px;">📍</p>
-                <p>Clique em algum Residencial ou em alguma região verde do mapa</p>
+                <p>Selecione um empreendimento</p>
             </div>
         </aside>
     </div>
@@ -53,9 +53,7 @@
                     btn.innerHTML = `<strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
                 }
                 
-                btn.onclick = () => {
-                    comandoSelecao(item.id_path, item.cidade, item);
-                };
+                btn.onclick = () => comandoSelecao(item.id_path, item.cidade, item);
                 list.appendChild(btn);
             });
         }
