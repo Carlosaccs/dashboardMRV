@@ -53,11 +53,12 @@ async function carregarPlanilha() {
                 tipo: catLimpa.includes('COMPLEXO') ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
                 nome: colunas[COL.NOME] || "",
-                nomeFull: colunas[COL.NOME_FULL] || colunas[COL.NOME] || "", // Coluna E
+                nomeFull: colunas[COL.NOME_FULL] || colunas[COL.NOME] || "", 
                 cidade: colunas[COL.ID] || "",
                 estoque: colunas[COL.ESTOQUE] || "",
                 endereco: colunas[COL.END] || "",
                 entrega: colunas[COL.ENTREGA] || "",
+                tipologias: colunas[COL.TIPOLOGIAS] || "-",
                 preco: colunas[COL.P_DE] || "Consulte",
                 p_de: colunas[COL.P_DE] || "-",
                 obra: colunas[COL.OBRA] || "0",
@@ -111,36 +112,62 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div>`;
     
-    // Lista de botões acima
     html += `<div style="margin-bottom:10px;">${listaSuperior.map(item => {
                 const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
                 return `<button class="${classe}" onclick="navegarVitrine('${item.nome}', '${nomeRegiao}')"><strong>${item.nome}</strong> ${item.tipo === 'R' ? obterHtmlEstoque(item.estoque, item.tipo) : ''}</button>`;
             }).join('')}</div>`;
 
-    // LINHA HORIZONTAL (Dando distância)
-    html += `<hr style="border:0; border-top:1px solid #ddd; margin:15px 0 20px 0;">`;
+    html += `<hr style="border:0; border-top:1px solid #ddd; margin:15px 0 15px 0;">`;
 
     if (selecionado.tipo === 'N') {
-        // --- SITUAÇÃO COMPLEXO ---
-        // Faixa preta com NOME_FULL
+        // --- COMPLEXO ---
         html += `<div class="separador-complexo-btn" style="width:100% !important; margin:0 !important; border-radius:4px 4px 0 0; cursor:default; height:36px !important; pointer-events:none;">${selecionado.nomeFull}</div>`;
-        
-        // Endereço e Maps
         html += `<div style="padding: 10px 0;"><p style="font-size:0.65rem; color:#444; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p></div>`;
-
-        // Caixa cinza colada no título
         const desc = (selecionado.descLonga || "").split('\n').map(p => `<p style="margin-bottom:8px;">${p.trim()}</p>`).join('');
         html += `<div class="box-argumento" style="border-left-color: #00713a; background:#f9f9f9; margin-top:0; border-radius:0 0 4px 4px;"><label>Sobre o Complexo</label>${desc}</div>`;
     
     } else {
-        // --- SITUAÇÃO RESIDENCIAL ---
-        html += `<div style="padding-top:8px;"><p style="font-size:0.65rem; color:#444; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>📍 ${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p>`;
-        html += `<table class="tabela-mrv"><thead><tr><th>PLANTA</th><th class="laranja">PREÇO A PARTIR</th><th>ENTREGA</th></tr></thead><tbody><tr><td>${selecionado.p_de}</td><td class="destaque">${selecionado.preco}</td><td>${selecionado.entrega}</td></tr></tbody></table><div class="info-box"><label>Status da Obra</label><span>${selecionado.obra}%</span></div>${selecionado.documentos ? `<div class="box-documentos" style="margin-top:8px;"><span>${selecionado.documentos}</span></div>` : ''}${selecionado.dica ? `<div class="box-argumento box-dica"><label>Dica do Corretor</label><p>${selecionado.dica}</p></div>` : ''}<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:35px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
+        // --- RESIDENCIAL (Layout Novo do Desenho) ---
+        // Faixa Laranja com NOME_FULL
+        html += `<div style="background:#ff8c00; color:#000; text-align:center; padding:10px; font-weight:bold; border-radius:4px; font-size:0.9rem; text-transform:uppercase; margin-bottom:10px;">${selecionado.nomeFull}</div>`;
+        
+        // Endereço e Maps
+        html += `<div style="padding: 5px 0 10px 0;"><p style="font-size:0.75rem; color:#000; font-weight:bold; display:flex; justify-content:space-between; align-items:center;"><span>${selecionado.endereco}</span><a href="${urlMaps}" target="_blank" class="btn-maps">MAPS</a></p></div>`;
+
+        // Grid de Informações (Baseado no seu desenho)
+        html += `
+        <div class="grid-info">
+            <div class="card-mini"><label>REG</label><span>${selecionado.cidade.toUpperCase()}</span></div>
+            <div class="card-mini"><label>ENTREGA</label><span>${selecionado.entrega}</span></div>
+            <div class="card-mini"><label>OBRA</label><span>${selecionado.obra}%</span></div>
+            <div class="card-full"><label>PLANTAS</label><span>${selecionado.tipologias}</span></div>
+            <div class="card-full"><label>ESTOQUE</label><span>restam ${selecionado.estoque} un.</span></div>
+        </div>`;
+
+        // Destaque de Documentos / Campanha (Se houver)
+        if(selecionado.documentos) {
+            html += `<div style="text-align:center; color:#e31010; font-weight:bold; font-size:0.8rem; padding:10px 0; text-transform:uppercase;">${selecionado.documentos}</div>`;
+        }
+
+        // Tabela de Preço Simplificada
+        html += `
+        <div class="box-preco">
+            <div class="col-preco">TIPOLOGIA<br><strong>${selecionado.p_de}</strong></div>
+            <div class="col-preco destaque">MENOR PREÇO<br><strong>R$ ${selecionado.preco}</strong></div>
+        </div>`;
+
+        // Dica e Book
+        if(selecionado.dica) {
+            html += `<div class="box-argumento box-dica" style="margin-top:10px;"><label>DICA DO CORRETOR</label><p>${selecionado.dica}</p></div>`;
+        }
+        
+        html += `<a href="${selecionado.book}" target="_blank" class="btRes" style="background:#00713a; color:white; justify-content:center; font-weight:bold; margin-top:10px; border:none; width:100% !important; height:40px !important; display:flex; align-items:center;">📄 BOOK CLIENTE</a>`;
     }
     
     painel.innerHTML = html;
 }
 
+// Funções de Mapa (Mantidas intactas para não "estourar")
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     if (!container || !dados) return;
