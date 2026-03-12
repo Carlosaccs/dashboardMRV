@@ -11,13 +11,28 @@ const COL = {
 };
 
 async function iniciarApp() {
-    // Ajuste do Título e Faixa Verde
+    // 1. Ajuste da Faixa Verde (Título e Tamanho)
     const topo = document.querySelector('.topo-dashboard');
     if (topo) {
         topo.innerText = "RESIDENCIAIS MRV EM SÃO PAULO";
-        topo.style.padding = "20px 0";
-        topo.style.fontSize = "1.3rem";
         topo.style.background = "#00713a";
+        topo.style.height = "60px";        // Faixa mais larga
+        topo.style.lineHeight = "60px";    // Centraliza o texto verticalmente
+        topo.style.fontSize = "1.5rem";    // Fonte maior e imponente
+        topo.style.fontWeight = "bold";
+        topo.style.display = "block";
+        topo.style.width = "100%";
+        topo.style.textAlign = "center";
+        topo.style.color = "white";
+    }
+
+    // 2. Garante que o container do mapa não corte o zoom de 15%
+    const caixaA = document.getElementById('caixa-a');
+    if (caixaA) {
+        caixaA.style.overflow = "visible"; 
+        caixaA.style.display = "flex";
+        caixaA.style.alignItems = "center";
+        caixaA.style.justifyContent = "center";
     }
 
     try {
@@ -32,19 +47,19 @@ async function carregarPlanilha() {
     
     try {
         const response = await fetch(URL_CSV);
-        const textoOriginal = await response.text();
+        let texto = await response.text();
         
-        // CORREÇÃO MESTRA: Garante que a última linha (Grand Prix) seja lida
-        const textoLimpo = textoOriginal.trim() + "\n";
+        // CORREÇÃO: Garante que a última linha (ex: Grand Prix) seja sempre lida
+        if (!texto.endsWith('\n')) texto += '\n';
 
         const linhas = [];
         let linhaAtual = "", dentroDeAspas = false;
         
-        for (let i = 0; i < textoLimpo.length; i++) {
-            const char = textoLimpo[i];
+        for (let i = 0; i < texto.length; i++) {
+            const char = texto[i];
             if (char === '"') dentroDeAspas = !dentroDeAspas;
             if ((char === '\n' || char === '\r') && !dentroDeAspas) {
-                if (linhaAtual) linhas.push(linhaAtual);
+                if (linhaAtual.trim()) linhas.push(linhaAtual);
                 linhaAtual = "";
             } else { linhaAtual += char; }
         }
@@ -92,14 +107,6 @@ function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
     if (!container || !dados) return;
     
-    // Zoom de 15% no mapa principal via CSS do container
-    if (interativo) {
-        container.style.overflow = "hidden";
-        container.style.display = "flex";
-        container.style.alignItems = "center";
-        container.style.justifyContent = "center";
-    }
-
     if (!interativo) { 
         container.style.cursor = "pointer"; 
         container.onclick = trocarMapas; 
@@ -117,9 +124,9 @@ function renderizarNoContainer(id, dados, interativo) {
         return `<path id="${id}-${p.id}" name="${p.name}" d="${p.d}" class="${classe}" ${clique} ${hover}></path>`;
     }).join('');
 
-    // Aplicando o scale de 1.15 diretamente no SVG
+    // AUMENTO DE 15% NO MAPA PRINCIPAL (CAIXA-A)
     const zoomStyle = interativo ? 'style="transform: scale(1.15); transform-origin: center; width: 100%; height: 100%;"' : 'style="width: 100%; height: 100%;"';
-    
+
     container.innerHTML = `
         <svg viewBox="${dados.viewBox}" preserveAspectRatio="xMidYMid meet" ${zoomStyle}>
             <g transform="${dados.transform || ''}">${pathsHtml}</g>
@@ -148,7 +155,6 @@ function comandoSelecao(idPath, nomePath, fonte) {
         
         document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
         
-        // Ativa o botão na lista lateral
         const idBotao = `btn-esq-${selecionado.nome.replace(/[^a-zA-Z0-9]/g, '-')}`;
         const btnClicado = document.getElementById(idBotao);
         if (btnClicado) btnClicado.classList.add('ativo');
@@ -160,7 +166,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     const listaSuperior = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
+    const urlMaps = `http://google.com/maps?q=${encodeURIComponent(selecionado.endereco)}`;
     
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao.toUpperCase()}</div><div style="margin-bottom:10px;">${listaSuperior.map(item => {
                 const classe = item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes';
@@ -193,12 +199,8 @@ function trocarMapas() {
 function limparInterface() {
     nomeSelecionado = ""; 
     pathSelecionado = null;
-    const titulo = document.getElementById('cidade-titulo');
-    if(titulo) titulo.innerText = "Selecione uma região no mapa ou na lista";
-    
-    const ficha = document.getElementById('ficha-tecnica');
-    if(ficha) ficha.innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
-    
+    document.getElementById('cidade-titulo').innerText = "Selecione uma região no mapa ou na lista";
+    document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:100px;"><p style="font-size: 30px;">📍</p><p>Clique em algum Residencial ou em alguma região verde do mapa</p></div>`;
     document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
 }
 
