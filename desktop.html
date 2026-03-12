@@ -7,21 +7,29 @@
     <title>Dashboard MRV SP - v9.6</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Ajuste da Faixa Verde conforme solicitado */
+        /* Ajuste da Faixa Verde (Reduzida em 30%) */
         .header {
             background-color: #00713a !important;
-            height: 80px !important;
-            line-height: 80px !important; /* Centraliza o texto verticalmente */
-            font-size: 1.6rem !important;
+            height: 56px !important; /* Altura reduzida */
+            line-height: 56px !important; 
+            font-size: 1.4rem !important;
             font-weight: bold !important;
             text-align: center !important;
             color: white !important;
             display: block !important;
+            border: none !important;
+        }
+
+        /* Remove a cor cinza e bordas da caixa do mapa */
+        #caixa-a {
+            background: none !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
-        /* Garante que o conteúdo abaixo não fique colado na faixa */
         .wrapper {
-            height: calc(100vh - 80px);
+            height: calc(100vh - 56px);
         }
     </style>
 </head>
@@ -52,7 +60,6 @@
     <script src="mrv-engine.js"></script>
     
     <script>
-        // Função atualizada para garantir a troca de mapa ao clicar no botão
         function gerarListaLateral() {
             const list = document.getElementById('lista-imoveis');
             if (!list) return;
@@ -72,10 +79,8 @@
                     btn.innerHTML = `<strong class="notranslate">${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}`;
                 }
                 
-                // O ONCLICK agora passa o id_path e cidade para disparar a lógica do engine
                 btn.onclick = () => {
                     if (typeof comandoSelecao === 'function') {
-                        // Passamos o id_path e a cidade (que é o ID da região no mapa)
                         comandoSelecao(item.id_path, item.cidade, item);
                     }
                 };
