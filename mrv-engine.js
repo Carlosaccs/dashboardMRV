@@ -46,9 +46,9 @@ async function carregarPlanilha() {
             }
             colunas.push(campo.trim());
 
-            // Filtro de Categoria ultra-robusto
+            // FILTRO REFORÇADO: Captura "COMPLEXO", "COMPLEXOS", "N" etc.
             const catRaw = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase().trim() : "";
-            const ehComplexo = (catRaw.includes('COMPLEXO') || catRaw === 'N');
+            const ehComplexo = (catRaw.indexOf('COMPLEXO') !== -1 || catRaw === 'N');
 
             return {
                 id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
@@ -107,7 +107,6 @@ function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); 
 
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
-    
     const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
     const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
 
@@ -181,22 +180,18 @@ function resetTitulo() { document.getElementById('cidade-titulo').innerText = no
 function trocarMapas() { 
     mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
     desenharMapas();
-    limparInterface(); // Limpa vitrine e destaques ao trocar mapa
+    limparInterface();
 }
 
 function limparInterface() {
     nomeSelecionado = "";
     pathSelecionado = null;
     document.getElementById('cidade-titulo').innerText = "Selecione uma região no mapa ou na lista";
-    
-    // Limpa Vitrine
     document.getElementById('ficha-tecnica').innerHTML = `
         <div style="text-align:center; color:#ccc; margin-top:100px;">
             <p style="font-size: 30px;">📍</p>
             <p>Clique em algum Residencial ou em alguma região verde do mapa</p>
         </div>`;
-    
-    // Remove destaques de todos os botões da esquerda
     document.querySelectorAll('.btRes, .separador-complexo-btn').forEach(btn => btn.classList.remove('ativo'));
 }
 
