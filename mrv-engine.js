@@ -25,6 +25,7 @@ async function carregarPlanilha() {
         let texto = await response.text();
         const linhas = [];
         let linhaAtual = "", dentroDeAspas = false;
+        
         for (let i = 0; i < texto.length; i++) {
             const char = texto[i];
             if (char === '"') dentroDeAspas = !dentroDeAspas;
@@ -33,6 +34,7 @@ async function carregarPlanilha() {
                 linhaAtual = "";
             } else { linhaAtual += char; }
         }
+
         DADOS_PLANILHA = linhas.slice(1).map(linha => {
             const colunas = [];
             let campo = "", aspas = false;
@@ -43,16 +45,21 @@ async function carregarPlanilha() {
                 else { campo += char; }
             }
             colunas.push(campo.trim());
+
+            // LOGICA DE CATEGORIA MAIS FLEXIVEL (Resolve o sumiço dos complexos)
+            const catRes = colunas[COL.CATEGORIA] ? colunas[COL.CATEGORIA].toUpperCase().trim() : "";
+            const ehComplexo = (catRes === 'COMPLEXO' || catRes === 'N' || catRes === 'COMPLEXOS');
+
             return {
                 id_path: colunas[COL.ID] ? colunas[COL.ID].toLowerCase().replace(/\s/g, '') : "",
-                tipo: (colunas[COL.CATEGORIA] === 'COMPLEXO' || colunas[COL.CATEGORIA] === 'N') ? 'N' : 'R',
+                tipo: ehComplexo ? 'N' : 'R',
                 ordem: parseInt(colunas[COL.ORDEM]) || 999,
                 nome: colunas[COL.NOME] || "",
                 cidade: colunas[COL.ID] ? colunas[COL.ID].toUpperCase() : "",
                 estoque: colunas[COL.ESTOQUE] || "",
                 endereco: colunas[COL.END] || "",
                 entrega: colunas[COL.ENTREGA] || "",
-                preco: colunas[COL.PRECO] || "",
+                preco: colunas[COL.PRECO] || "Consulte",
                 p_de: colunas[COL.P_DE] || "-",
                 obra: colunas[COL.OBRA] || "0",
                 documentos: colunas[COL.DOCUMENTOS] || "",
@@ -61,6 +68,7 @@ async function carregarPlanilha() {
                 book: colunas[COL.BK_CLI] || ""
             };
         }).filter(i => i.id_path !== "" && i.nome.length > 2);
+
         DADOS_PLANILHA.sort((a, b) => a.ordem - b.ordem);
         if (typeof gerarListaLateral === 'function') gerarListaLateral();
         desenharMapas();
@@ -99,6 +107,14 @@ function cliqueNoMapa(id, nome, temMRV) { if (temMRV) comandoSelecao(id, nome); 
 
 function comandoSelecao(idPath, nomePath, fonte) {
     const idBusca = idPath.toLowerCase().replace(/\s/g, '');
+    
+    // AUTO-SWITCH: Verifica se a cidade pertence ao mapa que NÃO está ativo
+    const estaNaGSP = MAPA_GSP.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+    const estaNoInterior = MAPA_INTERIOR.paths.some(p => p.id.toLowerCase().replace(/\s/g, '') === idBusca);
+
+    if (estaNaGSP && mapaAtivo !== 'GSP') { trocarMapas(); }
+    else if (estaNoInterior && mapaAtivo !== 'INTERIOR') { trocarMapas(); }
+
     const imoveis = DADOS_PLANILHA.filter(d => d.id_path === idBusca);
     if (imoveis.length > 0) {
         const selecionado = (fonte && fonte.nome) ? fonte : imoveis[0];
