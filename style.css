@@ -1,102 +1,466 @@
+/* ==========================================================================
+   1. VARIÁVEIS E RESET
+   ========================================================================== */
 :root {
     --mrv-verde: #00713a;
     --mrv-laranja: #ff8c00;
+    --mrv-preto: #333;
     --vermelho-mrv: #e31010;
-    --texto-escuro: #333;
+    --cinza-claro: #f4f4f4;
+    --cinza-divisor: #ccc;
+    --cinza-mapa: #777;
+
+    /* Cores das Zonas (Padrão MRV SP) */
+    --mrv-zo: #f37021; 
+    --mrv-zl: #002060; 
+    --mrv-zn: #ffc000; 
+    --mrv-zs: #ec008c; 
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-/* FAIXA VERDE CENTRALIZADA */
+body { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    overflow: hidden; 
+    background: white; 
+}
+
+/* ==========================================================================
+   2. HEADER E BOTÃO SOBRE
+   ========================================================================== */
 .header { 
     background-color: var(--mrv-verde) !important; 
     color: white !important; 
-    height: 56px !important; 
-    line-height: 56px !important; 
-    font-size: 1.4rem !important;
+    height: 60px !important; 
+    line-height: 60px !important; 
+    font-size: 1.6rem !important; 
     font-weight: bold !important; 
-    text-align: center !important;
-    width: 100%;
-    display: block !important;
+    text-align: center;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 10;
 }
 
+#btn-sobre {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: 1px solid white;
+    color: white;
+    padding: 6px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+#btn-sobre:hover { 
+    background: white; 
+    color: var(--mrv-verde); 
+}
+
+/* ==========================================================================
+   3. ESTRUTURA PRINCIPAL (WRAPPER)
+   ========================================================================== */
 .wrapper { 
     display: flex; 
     flex: 1; 
-    height: calc(100vh - 56px); 
+    height: calc(100vh - 60px); 
     overflow: hidden; 
 }
 
-/* Barra Lateral Esquerda */
-.sidebar-esq { width: 280px; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px 0; background: #f8f9fa; flex-shrink: 0; }
-
-.separador-complexo-btn, .btRes {
-    width: 92% !important;
-    margin: 4px auto !important;
-    min-height: 28px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 4px 8px !important;
-    border-radius: 4px;
-    font-size: 0.68rem;
-    cursor: pointer;
-    border: 1px solid #ddd;
-    transition: 0.2s;
-    text-align: left;
+/* ==========================================================================
+   4. SIDEBAR ESQUERDA (LISTA DE IMÓVEIS)
+   ========================================================================== */
+.sidebar-esq { 
+    width: 280px; 
+    border-right: 1px solid #ddd; 
+    overflow-y: auto; 
+    padding: 10px 0; 
+    background: #f8f9fa; 
+    flex-shrink: 0; 
 }
 
-.separador-complexo-btn { background: #333 !important; color: white !important; justify-content: center !important; font-weight: bold; text-transform: uppercase; border: none !important; }
-.btRes { background: #fff; border-left: 4px solid var(--mrv-verde) !important; justify-content: space-between; color: var(--texto-escuro); }
+.btRes, .separador-complexo-btn {
+    width: 92% !important; 
+    margin: 4px auto !important; 
+    min-height: 27px;
+    display: flex !important; 
+    align-items: center !important; 
+    padding: 6px 10px !important;
+    border-radius: 4px; 
+    font-size: 0.72rem; 
+    cursor: pointer; 
+    border: 1px solid #ddd; 
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
 
-.btRes:hover { background-color: #e0e0e0 !important; border: 1px solid var(--mrv-verde) !important; }
-.btRes.ativo { background-color: var(--mrv-laranja) !important; color: white !important; border: 1px solid var(--mrv-verde) !important; }
-.btRes.ativo strong { color: white !important; }
+.separador-complexo-btn { 
+    background: #333 !important; 
+    color: white !important; 
+    justify-content: center !important; 
+    font-weight: bold; 
+    text-transform: uppercase; 
+    border: none !important; 
+}
 
-.badge-estoque { font-size: 0.62rem; font-weight: bold; white-space: nowrap; }
+.btRes { 
+    background: #fff; 
+    border-left: 4px solid var(--mrv-verde) !important; 
+    justify-content: space-between; 
+    color: #333; 
+}
 
-/* Área Central */
-.conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
-#cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.7rem; color: #555; height: 28px; display: flex; align-items: center; justify-content: center; }
+.btRes.btn-zo { border-left: 4px solid var(--mrv-zo) !important; }
+.btRes.btn-zl { border-left: 4px solid var(--mrv-zl) !important; }
+.btRes.btn-zn { border-left: 4px solid var(--mrv-zn) !important; }
+.btRes.btn-zs { border-left: 4px solid var(--mrv-zs) !important; }
+
+.btRes:hover { 
+    background-color: #f0f0f0 !important; 
+    border: 1px solid var(--mrv-verde) !important; 
+}
+
+.btRes.ativo { 
+    background-color: var(--mrv-laranja) !important; 
+    color: white !important; 
+    border: 1px solid var(--mrv-laranja) !important; 
+}
+
+/* ==========================================================================
+   5. CENTRO (MAPAS E TÍTULOS)
+   ========================================================================== */
+.conteudo-centro { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    background: #fff; 
+    overflow: hidden; 
+}
+
+#cidade-titulo { 
+    background: #eee; 
+    padding: 4px; 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 0.85rem; 
+    color: #555; 
+    height: 30px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-transform: uppercase; 
+}
 
 #caixa-a { 
-    flex: 1.3; 
+    flex: 2; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 15px; 
+    overflow: hidden; 
+}
+
+#caixa-b { 
+    flex: 0.8; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     padding: 10px; 
-    overflow: hidden; 
-    background: transparent !important; 
-    border: none !important; 
+    border-top: 2px solid #eee; 
+    cursor: pointer; 
+    background: #fff; 
+    min-height: 140px; 
 }
 
-#caixa-b { flex: 0.45; display: flex; align-items: center; justify-content: center; padding: 10px; background: white; overflow: hidden; }
+svg { width: 100%; height: 100%; }
 
-/* MAPAS */
-svg { width: 100% !important; height: 100% !important; max-width: 100%; max-height: 100%; display: block; }
-path { fill: #777; stroke: #ffffff; stroke-width: 0.8; pointer-events: all; transition: 0.2s; }
-path.commrv { fill: var(--mrv-verde) !important; cursor: pointer; }
-path:not(.commrv):hover { fill: #bbb !important; }
-path.commrv:hover, path.path-ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1px !important; }
+path { 
+    fill: var(--cinza-mapa); 
+    stroke: #fff; 
+    stroke-width: 0.8; 
+    transition: fill 0.2s, stroke-width 0.2s; 
+}
 
-/* Vitrine Direita */
-.sidebar-dir { width: 480px; border-left: 1px solid #ddd; overflow-y: auto; padding: 10px; flex-shrink: 0; background: #fff; }
-.vitrine-topo { background: var(--mrv-verde); color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 0.75rem; text-transform: uppercase; }
+path:hover { fill: #999 !important; cursor: pointer; }
+path.commrv { fill: var(--mrv-verde) !important; }
+path.commrv:hover, path.ativo { 
+    fill: var(--mrv-laranja) !important; 
+    stroke: #000 !important; 
+    stroke-width: 1.5px !important; 
+}
 
-/* TABELA DE PREÇOS */
-.tabela-mrv { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.7rem; border: 1px solid #ddd; }
-.tabela-mrv th { background: #e0e0e0; padding: 6px; font-weight: 800; border: 1px solid #fff; text-transform: uppercase; }
-.tabela-mrv th.laranja { background: var(--mrv-laranja); color: #000; }
-.tabela-mrv td { padding: 6px; border: 1px solid #fff; text-align: center; background: #f8f8f8; }
-.tabela-mrv td.destaque { background: #fff3d6; font-weight: 800; color: var(--mrv-verde); }
+/* ==========================================================================
+   6. SIDEBAR DIREITA (VITRINE / FICHA TÉCNICA)
+   ========================================================================== */
+.sidebar-dir { 
+    width: 480px; 
+    border-left: 1px solid #ddd; 
+    overflow-y: auto; 
+    padding: 12px; 
+    flex-shrink: 0; 
+}
 
-.info-box { background: #f2f2f2; padding: 6px 10px; border-radius: 4px; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
-.info-box label { font-size: 0.55rem; color: #666; font-weight: bold; text-transform: uppercase; }
-.info-box span { font-size: 0.7rem; font-weight: 700; color: #333; }
+/* 6.1 - CABEÇALHO DO IMÓVEL (PROTEÇÃO) */
+/* Mantém as tabelas de Entrega, Obra, etc. pequenas */
+.sidebar-dir table:first-of-type b, 
+.sidebar-dir table:first-of-type span,
+.sidebar-dir table:first-of-type td {
+    font-size: 0.75rem !important;
+}
 
-.box-argumento { margin-top: 6px; padding: 10px; border-radius: 4px; border-left: 4px solid #ddd; }
-.box-argumento label { display: block; font-size: 0.52rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-.box-argumento p { font-size: 0.72rem; color: #444; line-height: 1.4; }
-.box-dica { background: #fffde6; border-left-color: #f3d221; }
+/* 6.2 - CAIXAS COLORIDAS (LOCALIZAÇÃO, MOBILIDADE, ETC) */
+/* Alvo: Qualquer div que tenha uma borda lateral (as caixas coloridas) */
+.sidebar-dir div[style*="border-left"] {
+    font-size: 16px !important; 
+    line-height: 1.4 !important;
+}
 
-.btn-maps { display: inline-flex; align-items: center; background: #4285F4; color: white !important; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
+/* Alvo Universal Interno: Garante que o texto dentro de spans ou p também mude */
+.sidebar-dir div[style*="border-left"] *,
+.sidebar-dir div[style*="border-left"] span,
+.sidebar-dir div[style*="border-left"] p {
+    font-size: 16px !important;
+}
+
+/* Ajuste apenas para os títulos em negrito dentro das caixas ficarem um pouco menores */
+.sidebar-dir div[style*="border-left"] strong {
+    font-size: 14px !important;
+    display: inline-block;
+    margin-bottom: 3px;
+}
+
+.vitrine-topo { 
+    background: var(--mrv-verde); 
+    color: white; 
+    padding: 8px; 
+    text-align: center; 
+    font-weight: bold; 
+    border-radius: 4px; 
+    margin-bottom: 8px; 
+    font-size: 0.85rem; 
+    text-transform: uppercase; 
+}
+
+.titulo-vitrine-faixa { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    width: 100% !important; 
+    height: 34px !important; 
+    font-weight: bold !important; 
+    font-size: 0.85rem !important; 
+    border-radius: 4px; 
+    text-transform: uppercase; 
+    color: #fff; 
+    margin-bottom: 8px; 
+}
+
+.faixa-laranja { background: var(--mrv-laranja) !important; }
+.faixa-preta { background: var(--mrv-preto) !important; }
+
+/* ==========================================================================
+   7. TABELAS DE PREÇOS (MANTIDO COMPACTO)
+   ========================================================================== */
+.tabela-precos-container { 
+    width: 100%; 
+    background: var(--cinza-claro); 
+    border-radius: 4px; 
+    margin: 10px 0; 
+    border: 1px solid #ddd; 
+    overflow: hidden; 
+}
+
+.tabela-header { 
+    background: #eee; 
+    font-weight: bold; 
+    font-size: 0.65rem; 
+    min-height: 30px; 
+    display: flex; 
+    align-items: center; 
+}
+
+.tabela-row { 
+    display: flex; 
+    background: #fff; 
+    font-size: 0.7rem; 
+    border-bottom: 1px solid #eee; 
+    min-height: 30px; 
+    align-items: center; 
+}
+
+.col-tabela { 
+    flex: 1; 
+    padding: 5px; 
+    text-align: center; 
+    border-right: 1px solid #eee; 
+}
+
+.col-laranja { 
+    background: #fff3e0 !important; 
+    color: var(--mrv-laranja) !important; 
+    font-weight: bold; 
+}
+
+/* ==========================================================================
+   8. CARDS DE MATERIAIS E PREVIEW
+   ========================================================================== */
+.card-material-item { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #fff; 
+    border: 1px solid #e0e0e0; 
+    border-radius: 8px; 
+    padding: 8px 12px; 
+    margin-bottom: 6px; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+}
+
+.card-material-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.card-icon { font-size: 1rem; }
+.card-text { font-size: 0.7rem; font-weight: 600; color: #333; }
+.card-material-right { display: flex; gap: 5px; align-items: center; }
+
+.btn-com-preview { position: relative; display: inline-block; }
+
+.card-btn-abrir, .card-btn-copiar { 
+    width: 70px; 
+    height: 26px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 0.65rem; 
+    font-weight: bold; 
+    border-radius: 4px; 
+    text-decoration: none; 
+    color: #fff; 
+    border: none; 
+    cursor: pointer; 
+}
+
+.card-btn-abrir { background: var(--mrv-verde); }
+.card-btn-copiar { background: var(--mrv-laranja); }
+
+.preview-container {
+    display: none; 
+    position: absolute; 
+    bottom: 35px; 
+    right: 0; 
+    width: 320px; 
+    height: 210px;
+    background: white; 
+    border: 2px solid var(--mrv-verde); 
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+    z-index: 1000; 
+    overflow: hidden; 
+}
+
+.preview-container iframe { 
+    width: 130%; 
+    height: 160%; 
+    border: none; 
+    pointer-events: none;
+    margin-top: -45px; 
+    margin-left: -15px; 
+}
+
+.btn-com-preview:hover .preview-container { 
+    display: block; 
+}
+
+/* ==========================================================================
+   9. BOTÕES E AUXILIARES
+   ========================================================================== */
+.btn-maps { 
+    background: #4285F4; 
+    color: white !important; 
+    text-decoration: none; 
+    padding: 2px 8px; 
+    border-radius: 4px; 
+    font-size: 0.65rem; 
+    font-weight: bold; 
+}
+
+.box-complexo-full { 
+    width: 100%; 
+    padding: 12px; 
+    background: #f9f9f9; 
+    border-left: 5px solid var(--mrv-preto); 
+    border-radius: 0 0 4px 4px; 
+}
+
+/* ==========================================================================
+   10. MODAL DESIGN
+   ========================================================================== */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 9999;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.6); 
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: white; 
+    margin: 8% auto; 
+    padding: 30px;
+    border-radius: 15px; 
+    width: 90%; 
+    max-width: 550px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4); 
+    position: relative;
+    animation: modalFade 0.3s ease-out;
+}
+
+@keyframes modalFade {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-close { 
+    position: absolute; 
+    right: 20px; 
+    top: 15px; 
+    cursor: pointer; 
+    font-size: 28px; 
+    color: #999; 
+}
+
+.modal-close:hover { color: var(--vermelho-mrv); }
+
+#btn-whatsapp-feedback {
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    background-color: #25d366; 
+    color: white;
+    text-decoration: none; 
+    padding: 16px; 
+    border-radius: 10px;
+    font-weight: bold; 
+    font-size: 1.1rem; 
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    margin-top: 10px;
+}
+
+#btn-whatsapp-feedback:hover { 
+    background-color: #128c7e; 
+    transform: scale(1.02); 
+}
+
+/* Scrollbar Personalizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #999; }
