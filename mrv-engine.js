@@ -6,18 +6,21 @@ let pathAtivo = null;
 let imovelAtivo = null;  
 let mapaAtivo = 'GSP'; 
 
+// Mapeamento atualizado: Nova coluna inserida em D (3), deslocando as demais
 const COL = {
-    ID: 0, CATEGORIA: 1, ORDEM: 2, NOME: 3, NOME_FULL: 4, 
-    ESTOQUE: 5, END: 6, TIPOLOGIAS: 7, ENTREGA: 8, 
-    P_DE: 9, P_ATE: 10, OBRA: 11, LIMITADOR: 12, 
-    REGIAO: 13, CASA_PAULISTA: 14, CAMPANHA: 15, 
-    OBSERVACOES: 18, DESC_LONGA: 17, 
-    LOCALIZACAO: 19, MOBILIDADE: 20, CULTURA_LAZER: 21,    
-    COMERCIO: 22, SAUDE_EDUCACAO: 23,
-    BOOK_CLIENTE: 24, BOOK_CORRETOR: 25,
-    LINKS_VIDEOS: 26, LINKS_PLANTAS: 27,  
-    LINKS_IMPLANT: 28, LINKS_DIVERSOS: 29,
-    ESTANDE: 30 
+    ID: 0, CATEGORIA: 1, ORDEM: 2, 
+    NOVA_COLUNA: 3, // Coluna inserida na posição D
+    NOME: 4, NOME_FULL: 5,  
+    ESTOQUE: 6, END: 7, TIPOLOGIAS: 8, ENTREGA: 9, 
+    P_DE: 10, P_ATE: 11, OBRA: 12, LIMITADOR: 13, 
+    REGIAO: 14, CASA_PAULISTA: 15, CAMPANHA: 16, 
+    DESC_LONGA: 18, OBSERVACOES: 19, // Invertidos/Deslocados conforme estrutura original
+    LOCALIZACAO: 20, MOBILIDADE: 21, CULTURA_LAZER: 22,    
+    COMERCIO: 23, SAUDE_EDUCACAO: 24,
+    BOOK_CLIENTE: 25, BOOK_CORRETOR: 26,
+    LINKS_VIDEOS: 27, LINKS_PLANTAS: 28,  
+    LINKS_IMPLANT: 29, LINKS_DIVERSOS: 30,
+    ESTANDE: 31 
 };
 
 /* ==========================================================================
@@ -133,14 +136,13 @@ function obterHtmlEstoque(valor, tipo) {
     return `<span style="color:#666; font-size:9px;">${clean || "CONSULTAR"}</span>`;
 }
 
-// NOVO: Função para detectar a Zona e retornar a classe CSS
 function detectarClasseZona(nome) {
     const n = nome.toUpperCase();
     if (n.startsWith("ZO ")) return "btn-zo";
     if (n.startsWith("ZL ")) return "btn-zl";
     if (n.startsWith("ZN ")) return "btn-zn";
     if (n.startsWith("ZS ")) return "btn-zs";
-    return ""; // Sem zona específica ou já fora de SP capital
+    return ""; 
 }
 
 function navegarVitrine(nome) { 
@@ -228,12 +230,11 @@ function trocarMapas(completo) {
     desenharMapas(); gerarListaLateral(); 
 }
 
-// ATUALIZADA: Agora aplica a classe de cor da zona
 function gerarListaLateral() {
     const container = document.getElementById('lista-imoveis');
     container.innerHTML = DADOS_PLANILHA.map(item => {
         const ativo = item.nome === imovelAtivo ? 'ativo' : '';
-        const classeZona = detectarClasseZona(item.nome); // Pega zn, zs, etc.
+        const classeZona = detectarClasseZona(item.nome); 
         
         return `<div class="${item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${ativo} ${classeZona}" onclick="navegarVitrine('${item.nome}')">
                     <strong>${item.nome}</strong> ${obterHtmlEstoque(item.estoque, item.tipo)}
