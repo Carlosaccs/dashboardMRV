@@ -73,11 +73,11 @@ html, body {
 
 /* --- FORÇANDO O TAMANHO DO ÍCONE (SVG) --- */
 #btn-menu svg, #btn-fullscreen svg {
-    width: 38px !important;  /* Aumentei para 38px para você ver o impacto */
-    height: 38px !important; 
-    fill: white !important;
+    width: 40px !important;  /* Aumentado de 20px para 32px */
+    height: 40px !important; /* Força o redimensionamento visual */
+    fill: white;
     display: block;
-    margin: auto; /* Centraliza no botão */
+    transition: transform 0.2s, opacity 0.2s;
 }
 
 /* --- EFEITO DE TOQUE --- */
