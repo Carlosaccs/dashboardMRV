@@ -1,185 +1,332 @@
 /* ==========================================================================
-   css v140.7.1 - REVISADO (Ficha Técnica Inteligente)
+   DASHBOARD MRV - VERSÃO FINAL CONSOLIDADA v141.3.0
+   Foco: Estande de Vendas (AF), Performance de Mapa e Fullscreen Estável
    ========================================================================== */
 
-/* ==========================================================================
-   BLOCO 1: RESET E FUNDAÇÃO
-   ========================================================================== */
-html, body {
-    margin: 0; padding: 0; 
-    width: 100%; height: 100%;
-    overflow: hidden; 
-    background: #00713a; 
+/* --------------------------------------------------------------------------
+   1. CONFIGURAÇÕES, ENDEREÇOS E ESTADOS GLOBAIS
+   -------------------------------------------------------------------------- */
+const svgNS = "http://www.w3.org/2000/svg";
+const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRKdJctOPQjKAtOZSDHyArD_H8SgKIouelAS1vF1d_-13pu7u_ic6J8nP3r0Ijd56WA-mbUmHjb4Me/pub?output=csv';
+
+let mapaAtivo = "GSP";
+let regiaoAtivaGeral = null; 
+window.dadosGerais = [];
+
+const AJUSTES_MAPA = {
+    GSP: { marginRight: "35%", marginLeft: "-70px", scale: "1" },
+    INTERIOR: { marginRight: "50%", marginLeft: "-100px", scale: "1.15" }
+};
+
+const ALTURA_PADRAO = "28px";
+
+/* --------------------------------------------------------------------------
+   2. UTILITÁRIOS, INTERFACE E FULLSCREEN
+   -------------------------------------------------------------------------- */
+function obterNomeZona(sigla) {
+    const s = sigla ? sigla.trim().toUpperCase() : "";
+    switch(s) {
+        case "ZO": return "Z. OESTE";
+        case "ZL": return "Z. LESTE";
+        case "ZN": return "Z. NORTE";
+        case "ZS": return "Z. SUL";
+        case "C":  return "CENTRO";
+        default: return ""; 
+    }
 }
 
-* { 
-    box-sizing: border-box; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;                       
+function renderizarIconeFullscreen() {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!btn) return;
+    const estaFull = document.fullscreenElement || document.webkitFullscreenElement;
+    btn.innerHTML = estaFull 
+        ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
 }
 
-:root {
-    --ft-font-size: 0.85rem; 
-    --ft-font-dados: 0.72rem;
-    --mrv-verde: #00713a;
+function solicitarFullscreen() {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    }
 }
 
-/* ==========================================================================
-   BLOCO 2: FAIXA VERDE E BOTÕES LATERAIS
-   ========================================================================== */
-.faixa-verde-vertical {
-    position: absolute; left: 0; top: 0;
-    width: 60px; height: 100%;
-    background-color: #00713a;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: space-between;
-    padding: 15px 0; z-index: 4000;
-    box-shadow: none;
-    border-right: none;
+document.addEventListener('fullscreenchange', renderizarIconeFullscreen);
+document.addEventListener('webkitfullscreenchange', renderizarIconeFullscreen);
+
+/* --------------------------------------------------------------------------
+   3. PROCESSAMENTO DE DADOS (GOOGLE SHEETS)
+   -------------------------------------------------------------------------- */
+async function carregarPlanilha() {
+    try {
+        const res = await fetch(`${URL_PLANILHA}&cache_buster=${Date.now()}`);
+        const csv = await res.text();
+        const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== "");
+        window.dadosGerais = []; 
+        linhas.slice(1).forEach((linha) => {
+            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^**"]*$)/);
+            if (c.length >= 32) { 
+                const limpar = (t) => t ? t.replace(/"/g, '').trim() : "";
+                if (limpar(c[4]) !== "") {
+                    window.dadosGerais.push({
+                        id: limpar(c[0]).toLowerCase(),
+                        categoria: limpar(c[1]).toUpperCase(),
+                        ordem: parseInt(limpar(c[2])) || 9999,
+                        zona: limpar(c[3]).toUpperCase(),
+                        nomeCurto: limpar(c[4]),
+                        endereco: limpar(c[7]),
+                        precosRaw: limpar(c[8]),
+                        destaqueCampanha: limpar(c[16]), 
+                        link: limpar(c[16]), 
+                        descLonga: limpar(c[18]),
+                        obsImportante: limpar(c[19] || ""), 
+                        localizacao: limpar(c[20] || ""),   
+                        mobilidade: limpar(c[21] || ""),    
+                        culturaLazer: limpar(c[22] || ""),  
+                        comercio: limpar(c[23] || ""),      
+                        saudeEducacao: limpar(c[24] || ""),
+                        bookCliente: limpar(c[25] || ""),
+                        bookCorretor: limpar(c[26] || ""),
+                        // NOVAS COLUNAS DE LISTAS DE LINKS:
+                        videosRaw: limpar(c[27] || ""),      // Coluna AB
+                        plantasRaw: limpar(c[28] || ""),     // Coluna AC
+                        locImplantaRaw: limpar(c[29] || ""), // Coluna AD
+                        diversosRaw: limpar(c[30] || ""),    // Coluna AE
+                        estandeVendas: limpar(c[31] || ""), 
+                        estoque: limpar(c[6]), entrega: limpar(c[9]),     
+                        plantaMin: limpar(c[10]), plantaMax: limpar(c[11]),  
+                        obra: limpar(c[12]), limitador: limpar(c[13]), cPaulista: limpar(c[15])   
+                    });
+                }
+            }
+        });
+        atualizarVisualizacao();
+        gerarMenuResidenciais(); 
+    } catch (e) { console.error("Erro planilha:", e); }
+}
+/* --------------------------------------------------------------------------
+   4. RENDERIZAÇÃO DA FICHA TÉCNICA (CONTEÚDO DINÂMICO)
+   -------------------------------------------------------------------------- */
+function exibirDadosResidencial(info) {
+    const elNome = document.getElementById('nome-imovel');
+    const elDetalhes = document.getElementById('detalhes-imovel');
+    if (elNome) elNome.innerText = info.nomeCurto.toUpperCase();
+    
+    const tratarLinkDrive = (url) => {
+        if (!url) return "#";
+        const u = url.trim();
+        if (u.includes("drive.google.com")) {
+            return u.replace(/\/view.*|\/edit.*|\?usp=sharing/g, "") + "/preview";
+        }
+        return u;
+    };
+
+    const criarCardLink = (titulo, link, icone) => {
+        if (!link || link.length < 5) return "";
+        const linkSeguro = tratarLinkDrive(link);
+        return `
+        <div style="display:flex; align-items:center; background:#fff; border-radius:4px; padding:0 10px; gap:8px; margin-top:6px; height:${ALTURA_PADRAO};">
+            <span style="font-size:0.9rem;">${icone}</span>
+            <div style="flex-grow:1; font-size:0.75rem; font-weight:bold; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${titulo.toUpperCase()}</div>
+            <div style="display:flex; gap:4px;">
+                <button onclick="window.open('${linkSeguro}','_blank')" style="background:#00713a; color:#fff; border:none; border-radius:4px; padding:0 8px; height:20px; font-size:0.55rem; font-weight:bold; cursor:pointer;">ABRIR</button>
+                <button onclick="copyToClipboard('${linkSeguro}')" style="background:#666; color:#fff; border:none; border-radius:4px; padding:0 8px; height:20px; font-size:0.55rem; font-weight:bold; cursor:pointer;">COPIAR</button>
+            </div>
+        </div>`;
+    };
+
+    // Função para processar colunas com múltiplos links (Título, Link; Título, Link)
+    const processarListaLinks = (rawString, icone) => {
+        if (!rawString || !rawString.includes(",")) return "";
+        let cards = "";
+        const itens = rawString.split(";");
+        itens.forEach(item => {
+            const partes = item.split(",");
+            if (partes.length >= 2) {
+                cards += criarCardLink(partes[0].trim(), partes[1].trim(), icone);
+            }
+        });
+        return cards;
+    };
+
+    const linkM = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.endereco)}`;
+    let html = `
+        <div style="font-size:0.82rem; color:#fff; margin-bottom:12px; font-weight:bold;">📍 ${info.endereco}</div>
+        <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <button onclick="window.open('${linkM}','_blank')" style="width:70px; height:${ALTURA_PADRAO}; background:#4285F4; color:#fff; border:none; border-radius:4px; font-weight:800; cursor:pointer; font-size:0.7rem;">MAPS</button>
+            <button onclick="copyToClipboard('${tratarLinkDrive(info.link)}')" style="width:70px; height:${ALTURA_PADRAO}; background:#444; color:#fff; border:none; border-radius:4px; font-weight:800; cursor:pointer; font-size:0.7rem;">COPIAR</button>
+        </div>`;
+
+    if (info.categoria === "COMPLEXO") {
+        html += (info.descLonga ? `<div style="font-size:0.82rem; color:#eee; margin-bottom:10px;">${info.descLonga}</div>` : "");
+        html += criarCardLink("Book Cliente", info.bookCliente, "📄");
+        html += criarCardLink("Book Corretor", info.bookCorretor, "💼");
+    } else {
+        // --- RESIDENCIAL ---
+        const camp = (info.destaqueCampanha) ? `<div style="background:#fff; color:#e31c19; height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.75rem; border-radius:4px; margin-bottom:8px;">${info.destaqueCampanha.toUpperCase()}</div>` : "";
+        const pTxt = (info.plantaMin && info.plantaMax) ? `${info.plantaMin} até ${info.plantaMax} m²` : (info.plantaMin || "---");
+        let eH = ""; const eN = parseInt(info.estoque);
+        if (!info.estoque) eH = "---"; else if (info.estoque === "-") eH = "CONSULTAR"; else if (eN === 0) eH = `<span style="text-decoration:line-through; color:#bbb;">VENDIDO</span>`; else if (eN < 5) eH = `<span style="color:#e31c19;">APENAS ${eN} UN.</span>`; else eH = `RESTAM ${eN} UN.`;
+
+        const cax = (l, v) => `<div style="background:#444; height:${ALTURA_PADRAO}; border-radius:4px; display:flex; align-items:center; justify-content:space-between; padding:0 8px;"><span style="color:#bbb; font-size:0.55rem; font-weight:bold;">${l}</span><span style="color:#fff; font-size:0.72rem; font-weight:bold;">${v}</span></div>`;
+        html += camp + `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">${cax("ENTREGA", info.entrega || "---")}${cax("OBRA", info.obra ? info.obra+'%' : '---')}${cax("PLANTAS", pTxt)}${cax("ESTOQUE", eH)}${cax("LIMITADOR", info.limitador || "---")}${cax("C. PAULISTA", info.cPaulista || "---")}</div>`;
+
+        if (info.precosRaw && info.precosRaw.includes(";")) {
+            let pL = ""; info.precosRaw.split(";").slice(1).forEach(l => { const d = l.split(","); if (d.length >= 4) pL += `<div style="display:grid; grid-template-columns:0.5fr 1.2fr 1fr 1fr; gap:4px; padding:6px 0; border-top:1px solid #555;"><span style="color:#fff; font-weight:800; font-size:0.7rem;">${d[0]}</span><span style="background:#ff8c00; color:#fff; font-weight:800; font-size:0.7rem; text-align:center; border-radius:2px;">${d[1]}</span><span style="color:#bbb; font-size:0.6rem; text-align:right;">${d[2]}</span><span style="color:#bbb; font-size:0.6rem; text-align:right;">${d[3]}</span></div>`; });
+            html += `<div style="background:#444; border-radius:4px; padding:8px;"><div style="display:grid; grid-template-columns:0.5fr 1.2fr 1fr 1fr; gap:4px; margin-bottom:4px; font-size:0.5rem; color:#bbb; font-weight:bold;"><span>TIPO</span><span style="text-align:center;">MENOR PREÇO</span><span style="text-align:right;">AVAL.</span><span style="text-align:right;">B. PAG.</span></div>${pL}</div>`;
+        }
+
+        // ESTANDE DE VENDAS
+        if (info.estandeVendas && info.estandeVendas.length > 5) {
+            const linkE = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.estandeVendas)}`;
+            html += `
+            <div style="margin-top:10px; border-radius:6px; overflow:hidden; border-left:4px solid #00713a; background:#333;">
+                <div style="background:#ddd; padding:4px 10px;"><span style="font-size:0.65rem; font-weight:900; color:#222;">📍 ESTANDE DE VENDAS</span></div>
+                <div style="padding:10px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                    <div style="color:#fff; font-size:0.75rem; line-height:1.2; flex-grow:1;">${info.estandeVendas.toUpperCase()}</div>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="window.open('${linkE}','_blank')" style="padding:5px 8px; background:#4285F4; color:#fff; border:none; border-radius:3px; font-size:0.55rem; font-weight:bold; cursor:pointer;">MAPS</button>
+                        <button onclick="copyToClipboard('${info.estandeVendas}')" style="padding:5px 8px; background:#666; color:#fff; border:none; border-radius:3px; font-size:0.55rem; font-weight:bold; cursor:pointer;">COPIAR</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        const criarCardTexto = (titulo, texto, corBorda) => {
+            if (!texto || texto.length < 3) return "";
+            return `
+            <div style="margin-top:10px; border-radius:6px; overflow:hidden; border-left:4px solid ${corBorda}; background:#333;">
+                <div style="background:#ddd; padding:4px 10px;"><span style="font-size:0.65rem; font-weight:900; color:#222;">${titulo.toUpperCase()}</span></div>
+                <div style="padding:10px; color:#fff; font-size:0.75rem; line-height:1.3;">${texto.toUpperCase()}</div>
+            </div>`;
+        };
+
+        html += criarCardTexto("⚠️ Observação Importante", info.obsImportante, "#e31c19");
+        html += criarCardTexto("📍 Localização", info.localizacao, "#4285F4");
+        html += criarCardTexto("🚲 Mobilidade", info.mobilidade, "#ff8c00");
+        html += criarCardTexto("🎭 Cultura e Lazer", info.culturaLazer, "#d1147e");
+        html += criarCardTexto("🛒 Comércio", info.comercio, "#7b1fa2");
+        html += criarCardTexto("🏥 Saúde e Educação", info.saudeEducacao, "#0054a6");
+
+        // PROCESSAMENTO DAS NOVAS LISTAS DE LINKS
+        html += processarListaLinks(info.videosRaw, "🎬");
+        html += processarListaLinks(info.plantasRaw, "📐");
+        html += processarListaLinks(info.locImplantaRaw, "🏢");
+        html += processarListaLinks(info.diversosRaw, "🔗");
+
+        // BOOKS FINAIS
+        html += criarCardLink("Book Cliente", info.bookCliente, "📄");
+        html += criarCardLink("Book Corretor", info.bookCorretor, "💼");
+    }
+    elDetalhes.innerHTML = html;
+}
+/* --------------------------------------------------------------------------
+   5. INTERAÇÃO COM MAPAS E TROCA DE ESTADOS
+   -------------------------------------------------------------------------- */
+function clicarNoMapa(pathElement, infoSelecionado, pDataRaw = null) {
+    solicitarFullscreen();
+    const ehVerde = pathElement.getAttribute('data-cor-base') === "#00713a";
+    const nomePath = pDataRaw ? pDataRaw.name : pathElement.getAttribute('data-name');
+    
+    if (!ehVerde && !infoSelecionado) {
+        atualizarTextoTopo(nomePath);
+        const corOriginal = pathElement.getAttribute('data-cor-base');
+        pathElement.style.fill = "#666666"; 
+        setTimeout(() => { pathElement.style.fill = corOriginal; atualizarTextoTopo(regiaoAtivaGeral); }, 800); 
+        return;
+    }
+    
+    regiaoAtivaGeral = nomePath;
+    atualizarTextoTopo(regiaoAtivaGeral);
+    document.querySelectorAll('#mapa-container path').forEach(p => { p.setAttribute('data-selecionado', 'false'); p.style.fill = p.getAttribute('data-cor-base'); });
+    pathElement.setAttribute('data-selecionado', 'true');
+    pathElement.style.fill = "#FF4500"; 
+    
+    const idRegiao = pathElement.id.replace('mini-', '').toLowerCase();
+    const todosDestaRegiao = window.dadosGerais.filter(d => d.id === idRegiao).sort((a, b) => a.ordem - b.ordem);
+    const ativo = infoSelecionado || todosDestaRegiao[0];
+    
+    const containerBotoes = document.getElementById('container-vitrine-botoes');
+    if(containerBotoes) {
+        containerBotoes.innerHTML = "";
+        todosDestaRegiao.forEach(item => {
+            if (item.nomeCurto !== (ativo ? ativo.nomeCurto : "")) {
+                const btn = document.createElement('div');
+                btn.className = 'menu-item-mrv';
+                const corZ = (item.zona === "ZO") ? "#ff8c00" : (item.zona === "ZL") ? "#e31c19" : (item.zona === "ZN") ? "#0054a6" : (item.zona === "ZS") ? "#d1147e" : "#00713a";
+                btn.innerHTML = `<span>${item.nomeCurto.toUpperCase()}</span><span style="opacity:0.7; font-size:0.6rem;">${obterNomeZona(item.zona)}</span>`;
+                btn.style.cssText = `height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:space-between; padding:0 10px; font-size:0.7rem; margin-bottom:4px; border-radius:4px; cursor:pointer; background:#fff; color:#333; border-right:4px solid ${corZ};`;
+                if (item.categoria === "COMPLEXO") { btn.style.backgroundColor = corZ; btn.style.color = "#fff"; }
+                btn.onclick = (e) => { e.stopPropagation(); clicarNoMapa(pathElement, item, pDataRaw); };
+                containerBotoes.appendChild(btn);
+            }
+        });
+    }
+    if (ativo) exibirDadosResidencial(ativo);
 }
 
-.titulo-vertical {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    font-weight: bold; font-size: 1.1rem;
-    letter-spacing: 2px; color: white !important;
-    white-space: nowrap; flex-grow: 1;
-    display: flex; align-items: center; justify-content: center;
+function desenharMapa(dados, targetId, ehMin) {
+    const container = document.getElementById(targetId);
+    if (!container || !dados) return;
+    container.innerHTML = "";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", dados.viewBox);
+    if (!ehMin) {
+        const conf = AJUSTES_MAPA[mapaAtivo];
+        svg.style.marginRight = conf.marginRight; svg.style.marginLeft = conf.marginLeft; svg.style.transform = `scale(${conf.scale})`;
+    }
+    const g = document.createElementNS(svgNS, "g");
+    if(dados.transform) g.setAttribute("transform", dados.transform);
+    dados.paths.forEach(p => {
+        const path = document.createElementNS(svgNS, "path");
+        const idL = p.id.toLowerCase();
+        const ehMRV = p.class === "commrv" || window.dadosGerais.some(d => d.id === idL);
+        path.setAttribute("d", p.d);
+        path.setAttribute("id", (ehMin ? 'mini-' : '') + p.id);
+        path.setAttribute('data-name', p.name || p.id);
+        const corBase = ehMRV ? "#00713a" : "#cccccc";
+        path.style.fill = corBase; path.style.stroke = "#fff"; path.style.strokeWidth = (ehMin || !ehMRV) ? "0" : "1.2";
+        path.setAttribute('data-cor-base', corBase);
+        if (!ehMin) path.onclick = (e) => { e.stopPropagation(); if (p.id === "grandesaopaulo") trocarMapas(); else clicarNoMapa(path, null, p); };
+        g.appendChild(path);
+    });
+    svg.appendChild(g); container.appendChild(svg);
 }
 
-#btn-menu:active, #btn-fullscreen:active {
-    opacity: 0.5;
-    transform: scale(0.9);
+function trocarMapas() { solicitarFullscreen(); mapaAtivo = (mapaAtivo === "GSP") ? "INTERIOR" : "GSP"; regiaoAtivaGeral = null; atualizarVisualizacao(); atualizarTextoTopo(null); }
+function atualizarVisualizacao() { if (typeof MAPA_GSP !== 'undefined' && typeof MAPA_INTERIOR !== 'undefined') { desenharMapa(mapaAtivo === "GSP" ? MAPA_GSP : MAPA_INTERIOR, "mapa-container", false); desenharMapa(mapaAtivo === "GSP" ? MAPA_INTERIOR : MAPA_GSP, "mapa-minimizado", true); } }
+function atualizarTextoTopo(nome) { const indicador = document.getElementById('identificador-cidade'); if (indicador) indicador.innerText = nome ? nome.toUpperCase() : (mapaAtivo === "GSP" ? "GRANDE SP" : "ESTADO DE SP"); }
+
+/* --------------------------------------------------------------------------
+   6. MENU LATERAL, EVENTOS E INICIALIZAÇÃO
+   -------------------------------------------------------------------------- */
+function gerarMenuResidenciais() {
+    const lista = document.getElementById('lista-residenciais');
+    if (!lista) return;
+    lista.innerHTML = "";
+    [...window.dadosGerais].sort((a,b)=>a.ordem-b.ordem).forEach(info => {
+        const li = document.createElement('li');
+        li.className = 'menu-item-mrv';
+        const corZ = (info.zona === "ZO") ? "#ff8c00" : (info.zona === "ZL") ? "#e31c19" : (info.zona === "ZN") ? "#0054a6" : (info.zona === "ZS") ? "#d1147e" : "#00713a";
+        li.innerHTML = `<span>${info.nomeCurto.toUpperCase()}</span><span style="opacity:0.7; font-size:0.6rem;">${obterNomeZona(info.zona)}</span>`;
+        li.style.cssText = `height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:space-between; padding-left:25px; width:calc(100% + 10px); font-size:0.75rem; margin-bottom:4px; border-radius:4px; cursor:pointer; margin-left:-10px; background:#fff; color:#333; border-right:5px solid ${corZ};`;
+        if (info.categoria === "COMPLEXO") { li.style.backgroundColor = corZ; li.style.color = "#fff"; }
+        li.onclick = (e) => { e.stopPropagation(); solicitarFullscreen(); let p = document.getElementById(info.id); if (!p) { trocarMapas(); setTimeout(() => { let np = document.getElementById(info.id); if(np) clicarNoMapa(np, info); }, 400); } else clicarNoMapa(p, info); };
+        lista.appendChild(li);
+    });
 }
 
-/* ==========================================================================
-   BLOCO 3: MENU LATERAL
-   ========================================================================== */
-#menu-lateral {
-    position: fixed; left: 60px; top: 0;
-    width: calc(100% - 80px); max-width: 330px; height: 100%;
-    background: transparent; backdrop-filter: blur(15px);
-    z-index: 3000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#menu-lateral.menu-aberto { transform: translateX(0); }
-#menu-lateral.menu-oculto { transform: translateX(-120%); }
+function toggleMenu() { solicitarFullscreen(); const m = document.getElementById('menu-lateral'); if(m) { m.classList.toggle('menu-aberto'); m.classList.toggle('menu-oculto'); } }
+function copyToClipboard(t) { if(!t || t==="#") return alert("Link indisponível"); navigator.clipboard.writeText(t).then(()=>alert("Copiado!")); }
 
-.menu-lista { list-style: none; padding: 10px 0; margin: 0; height: 100vh; overflow-y: auto; }
+window.onload = () => { carregarPlanilha(); renderizarIconeFullscreen(); };
 
-/* ==========================================================================
-   BLOCO 4: ESTILO DOS BOTÕES (MRV E COMPLEXO)
-   ========================================================================== */
-.menu-item-mrv {
-    background: #ffffff; border: 1px solid #d1d1d1;
-    border-right: 18px solid var(--mrv-verde); 
-    margin: 8px 10px 8px 5px; padding: 12px 12px 12px 25px; 
-    border-radius: 2px 12px 12px 2px;
-    color: #333; font-weight: 600; font-size: var(--ft-font-size);
-    display: block; box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
-    text-transform: uppercase;
-}
-
-.estilo-complexo {
-    border-right-width: 4px !important;
-    font-weight: 800 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-}
-
-/* ==========================================================================
-   BLOCO 5: MAPA E INDICADORES
-   ========================================================================== */
-#mapa-container {
-    position: absolute; left: 0; top: 0;
-    width: 100%; height: 100%; z-index: 10;
-    display: flex; align-items: center; justify-content: center;
-    padding-left: 60px;
-    background: #fff;
-}
-
-#mapa-minimizado {
-    position: absolute; bottom: 25px; right: calc(44% + 15px); 
-    width: 85px; height: 65px;
-    background: white; border: 2px solid var(--mrv-verde);
-    border-radius: 10px; z-index: 2000;
-    box-shadow: -5px 5px 15px rgba(0,0,0,0.3);
-}
-
-#identificador-cidade {
-    position: absolute; top: 10px; left: 28%;
-    transform: translateX(-50%);
-    font-size: 0.9rem; font-weight: bold;
-    color: var(--mrv-verde); z-index: 1500;
-    background: rgba(255,255,255,0.9);
-    padding: 5px 15px; border-radius: 20px;
-}
-
-/* ==========================================================================
-   BLOCO 6: FICHA TÉCNICA (LIMPEZA E NOVAS CAIXAS)
-   ========================================================================== */
-.ficha-tecnica {
-    position: absolute; right: 0; top: 0;
-    width: 44%; height: 100%;
-    background: rgba(30, 30, 30, 0.96); backdrop-filter: blur(12px);
-    color: white; padding: 15px 12px; z-index: 1000;
-    overflow-y: auto;
-    border-left: 1px solid rgba(255,255,255,0.1);
-}
-
-#nome-imovel {
-    color: #50c878; 
-    font-weight: 700; 
-    font-size: 0.85rem;
-    border: none;
-    padding-bottom: 4px;
-    margin-bottom: 10px;
-}
-
-/* --- NOVO: CAIXA DE DESTAQUE (COLUNA Q) --- */
-.caixa-destaque-coluna-q {
-    width: 100%;
-    background-color: #ffffff; /* Fundo branco para destaque total */
-    border-radius: 4px;
-    padding: 8px 5px;
-    margin-bottom: 15px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.caixa-destaque-coluna-q span {
-    color: #ff0000; /* Texto Vermelho em Negrito */
-    font-size: 0.85rem;
-    font-weight: 900;
-    text-transform: uppercase;
-}
-
-/* --- NOVO: GRID DE 6 CAIXAS --- */
-.grid-6-caixas-placeholder {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 8px;
-    width: 100%;
-}
-
-.caixa-pequena-placeholder {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #888;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-
-/* --- MATERIAIS DE APOIO (USADO EM COMPLEXO) --- */
-.divisor-materiais {
-    margin-top: 12px; 
-    border: none;
-    padding-top: 0px;
-    margin-bottom: 5px;
-}
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#btn-menu')) toggleMenu();
+    if (e.target.closest('#btn-fullscreen')) {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) solicitarFullscreen();
+        else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); }
+    }
+    if (e.target.closest('#mapa-minimizado')) trocarMapas();
+});
