@@ -1,16 +1,16 @@
 /* ==========================================================================
-   1. VARIÁVEIS E RESET
+   1. VARIÁVEIS E RESET (PADRONIZAÇÃO DE CORES)
    ========================================================================== */
 :root {
     --mrv-verde: #00713a;
-    --mrv-laranja: #ff8c00;
+    --mrv-laranja-mestre: #ff8c00; /* O TOM DE LARANJA DO MAPA (PADRÃO) */
     --mrv-preto: #333;
     --vermelho-mrv: #e31010;
     --cinza-claro: #f4f4f4;
     --cinza-divisor: #ccc;
     --cinza-mapa: #777;
 
-    /* Cores das Zonas (Padrão MRV SP) */
+    /* Cores das Zonas */
     --mrv-zo: #f37021; 
     --mrv-zl: #e31c19; 
     --mrv-zn: #0054a6; 
@@ -20,28 +20,17 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
 body { 
-    display: flex; 
-    flex-direction: column; 
-    height: 100vh; 
-    overflow: hidden; 
-    background: white; 
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: white; 
 }
 
 /* ==========================================================================
    2. HEADER
    ========================================================================== */
 .header { 
-    background-color: var(--mrv-verde) !important; 
-    color: white !important; 
-    height: 60px !important; 
-    line-height: 60px !important; 
-    font-size: 1.6rem !important; 
-    font-weight: bold !important; 
-    text-align: center;
-    flex-shrink: 0;
-    position: relative;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    z-index: 10;
+    background-color: var(--mrv-verde) !important; color: white !important; 
+    height: 60px !important; line-height: 60px !important; font-size: 1.6rem !important; 
+    font-weight: bold !important; text-align: center; flex-shrink: 0; position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;
 }
 
 #btn-sobre {
@@ -64,29 +53,17 @@ body {
     padding: 10px 0; background: #f8f9fa; flex-shrink: 0; 
 }
 
-/* Base comum para botões (Lista e Vitrine) */
 .btRes, .separador-complexo-btn {
-    width: 95% !important; 
-    margin: 4px auto !important; 
-    min-height: 32px;
-    display: flex !important; 
-    align-items: center !important; 
-    padding: 6px 10px !important;
-    border-radius: 4px; 
-    font-size: 0.72rem; 
-    cursor: pointer; 
-    text-decoration: none;
+    width: 95% !important; margin: 4px auto !important; min-height: 32px;
+    display: flex !important; align-items: center !important; padding: 6px 10px !important;
+    border-radius: 4px; font-size: 0.72rem; cursor: pointer; text-decoration: none;
     transition: all 0.15s ease;
 }
 
 /* --- ESTILO DOS PRÉDIOS (Residenciais) --- */
 .btRes { 
-    background: #fff; 
-    border: 1px solid #ddd;
-    border-left: none !important; /* Garante que não tenha na esquerda */
-    border-right: 6px solid var(--mrv-verde) !important; /* TARJA NA DIREITA */
-    justify-content: space-between; 
-    color: #333; 
+    background: #fff; border: 1px solid #ddd; border-left: none !important;
+    border-right: 6px solid var(--mrv-verde) !important; justify-content: space-between; color: #333; 
 }
 
 /* Cores das Tarjas DIREITAS */
@@ -96,24 +73,20 @@ body {
 .btRes.btn-zs { border-right-color: var(--mrv-zs) !important; }
 .btRes.btn-verde { border-right-color: var(--mrv-verde) !important; }
 
-.btRes:hover { background-color: #f0f0f0 !important; }
+/* HOVER E ATIVO COM O LARANJA DO MAPA */
+.btRes:hover { background-color: #fff3e0 !important; border-color: var(--mrv-laranja-mestre) !important; }
+
 .btRes.ativo { 
-    background-color: var(--mrv-laranja) !important; 
+    background-color: var(--mrv-laranja-mestre) !important; 
     color: white !important; 
-    border: 1px solid var(--mrv-laranja) !important; 
+    border: 1px solid var(--mrv-laranja-mestre) !important; 
 }
 
-/* --- ESTILO DOS COMPLEXOS (Fundo Colorido - Lista e Ficha) --- */
+/* --- ESTILO DOS COMPLEXOS (Fundo Colorido) --- */
 .separador-complexo-btn { 
-    color: white !important; 
-    justify-content: center !important; 
-    font-weight: bold; 
-    text-transform: uppercase; 
-    border: none !important; 
-    text-align: center;
+    color: white !important; justify-content: center !important; 
+    font-weight: bold; text-transform: uppercase; border: none !important; text-align: center;
 }
-
-/* Cores de Fundo Total para Complexos (Geral) */
 .separador-complexo-btn.btn-zo { background-color: var(--mrv-zo) !important; }
 .separador-complexo-btn.btn-zl { background-color: var(--mrv-zl) !important; }
 .separador-complexo-btn.btn-zn { background-color: var(--mrv-zn) !important; }
@@ -121,42 +94,49 @@ body {
 .separador-complexo-btn.btn-verde, .separador-complexo-btn { background-color: var(--mrv-verde) !important; }
 
 /* ==========================================================================
-   5. CENTRO E MAPAS
+   5. CENTRO E MAPAS (PADRONIZADO)
    ========================================================================== */
 .conteudo-centro { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
 #cidade-titulo { background: #eee; padding: 4px; text-align: center; font-weight: bold; font-size: 0.85rem; color: #555; height: 30px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
 #caixa-a { flex: 2; display: flex; align-items: center; justify-content: center; padding: 15px; overflow: hidden; }
 #caixa-b { flex: 0.4; display: flex; align-items: center; justify-content: center; padding: 5px; border-top: 1px solid #eee; cursor: pointer; background: #fff; min-height: 120px; max-height: 160px; }
+
 svg { width: 100%; height: 100%; }
 path { fill: var(--cinza-mapa); stroke: #fff; stroke-width: 0.8; transition: fill 0.2s, stroke-width 0.2s; }
+
+/* MAPA USANDO O LARANJA MESTRE */
 path:hover { fill: #999 !important; cursor: pointer; }
 path.commrv { fill: var(--mrv-verde) !important; }
-path.commrv:hover, path.ativo { fill: var(--mrv-laranja) !important; stroke: #000 !important; stroke-width: 1.5px !important; }
+path.commrv:hover, path.ativo { 
+    fill: var(--mrv-laranja-mestre) !important; 
+    stroke: #000 !important; stroke-width: 1.5px !important; 
+}
 
 /* ==========================================================================
    6. SIDEBAR DIREITA (VITRINE)
    ========================================================================== */
 .sidebar-dir { width: 480px; border-left: 1px solid #ddd; overflow-y: auto; padding: 12px; flex-shrink: 0; }
 .vitrine-topo { background: var(--mrv-verde); color: white; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 8px; font-size: 0.85rem; text-transform: uppercase; }
-.titulo-vitrine-faixa { display: flex !important; align-items: center !important; justify-content: center !important; width: 100% !important; height: 34px !important; font-weight: bold !important; font-size: 0.85rem !important; border-radius: 4px; text-transform: uppercase; color: #fff; margin-bottom: 8px; }
-.faixa-laranja { background: var(--mrv-laranja) !important; }
+
+/* FAIXA LARANJA DA VITRINE PADRONIZADA */
+.titulo-vitrine-faixa { 
+    display: flex !important; align-items: center !important; justify-content: center !important; 
+    width: 100% !important; height: 34px !important; font-weight: bold !important; 
+    font-size: 0.85rem !important; border-radius: 4px; text-transform: uppercase; color: #fff; margin-bottom: 8px; 
+}
+.faixa-laranja { background: var(--mrv-laranja-mestre) !important; }
 .faixa-preta { background: var(--mrv-preto) !important; }
 
-/* Caixas de Texto da Vitrine */
-.sidebar-dir div[style*="border-left"] { font-size: 14px !important; line-height: 1.4 !important; }
-.sidebar-dir div[style*="border-left"] strong { font-size: 12px !important; }
-
 /* ==========================================================================
-   7. TABELAS E CARDS
+   7. TABELAS E CARDS (BOTÃO COPIAR PADRONIZADO)
    ========================================================================== */
 .tabela-precos-container { width: 100%; background: var(--cinza-claro); border-radius: 4px; margin: 10px 0; border: 1px solid #ddd; overflow: hidden; }
 .tabela-header { background: #eee; font-weight: bold; font-size: 0.65rem; min-height: 30px; display: flex; align-items: center; }
 .tabela-row { display: flex; background: #fff; font-size: 0.7rem; border-bottom: 1px solid #eee; min-height: 30px; align-items: center; }
 .col-tabela { flex: 1; padding: 5px; text-align: center; border-right: 1px solid #eee; }
-.card-material-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.card-text { font-size: 0.7rem; font-weight: 600; color: #333; }
-.card-btn-abrir { background: var(--mrv-verde); }
-.card-btn-copiar { background: var(--mrv-laranja); }
+
+.card-btn-copiar { background: var(--mrv-laranja-mestre) !important; }
+.card-btn-abrir { background: var(--mrv-verde) !important; }
 .card-btn-abrir, .card-btn-copiar { width: 70px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; border-radius: 4px; color: #fff; border: none; cursor: pointer; }
 
 /* ==========================================================================
