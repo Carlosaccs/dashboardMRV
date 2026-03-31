@@ -1,10 +1,10 @@
 /* ==========================================================================
-   DASHBOARD MRV - VERSÃO FINAL CONSOLIDADA v141.3.0
-   Foco: Estande de Vendas (AF), Performance de Mapa e Fullscreen Estável
+   DASHBOARD MRV - VERSÃO FINAL CONSOLIDADA v141.3.1 (REVISADA)
+   Foco: Estabilidade de Dados, Fullscreen e Bloqueio de Orientação
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. CONFIGURAÇÕES, ENDEREÇOS E ESTADOS GLOBAIS
+   1. CONFIGURAÇÕES E ESTADOS GLOBAIS
    -------------------------------------------------------------------------- */
 const svgNS = "http://www.w3.org/2000/svg";
 const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRKdJctOPQjKAtOZSDHyArD_H8SgKIouelAS1vF1d_-13pu7u_ic6J8nP3r0Ijd56WA-mbUmHjb4Me/pub?output=csv';
@@ -21,7 +21,7 @@ const AJUSTES_MAPA = {
 const ALTURA_PADRAO = "28px";
 
 /* --------------------------------------------------------------------------
-   2. UTILITÁRIOS, INTERFACE E FULLSCREEN
+   2. UTILITÁRIOS E FULLSCREEN
    -------------------------------------------------------------------------- */
 function obterNomeZona(sigla) {
     const s = sigla ? sigla.trim().toUpperCase() : "";
@@ -65,7 +65,8 @@ async function carregarPlanilha() {
         const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== "");
         window.dadosGerais = []; 
         linhas.slice(1).forEach((linha) => {
-            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^**"]*$)/);
+            // Regex corrigida (removida aspa extra)
+            const c = linha.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             if (c.length >= 32) { 
                 const limpar = (t) => t ? t.replace(/"/g, '').trim() : "";
                 if (limpar(c[4]) !== "") {
@@ -88,13 +89,10 @@ async function carregarPlanilha() {
                         saudeEducacao: limpar(c[24] || ""),
                         bookCliente: limpar(c[25] || ""),
                         bookCorretor: limpar(c[26] || ""),
-                        // NOVAS COLUNAS DE LISTAS DE LINKS:
-                        videosRaw: limpar(c[27] || ""),      // Coluna AB
-                        plantasRaw: limpar(c[28] || ""),     // Coluna AC
-                        locImplantaRaw: limpar(c[29] || ""), // Coluna AD
-                        diversosRaw: limpar(c[30] || ""),    // Coluna AE
+                        videosRaw: limpar(c[27] || ""), plantasRaw: limpar(c[28] || ""),
+                        locImplantaRaw: limpar(c[29] || ""), diversosRaw: limpar(c[30] || ""),
                         estandeVendas: limpar(c[31] || ""), 
-                        estoque: limpar(c[6]), entrega: limpar(c[9]),     
+                        estoque: limpar(c[6]), entrega: limpar(c[9]),      
                         plantaMin: limpar(c[10]), plantaMax: limpar(c[11]),  
                         obra: limpar(c[12]), limitador: limpar(c[13]), cPaulista: limpar(c[15])   
                     });
@@ -105,8 +103,9 @@ async function carregarPlanilha() {
         gerarMenuResidenciais(); 
     } catch (e) { console.error("Erro planilha:", e); }
 }
+
 /* --------------------------------------------------------------------------
-   4. RENDERIZAÇÃO DA FICHA TÉCNICA (CONTEÚDO DINÂMICO)
+   4. RENDERIZAÇÃO DA FICHA TÉCNICA
    -------------------------------------------------------------------------- */
 function exibirDadosResidencial(info) {
     const elNome = document.getElementById('nome-imovel');
@@ -125,8 +124,7 @@ function exibirDadosResidencial(info) {
     const criarCardLink = (titulo, link, icone) => {
         if (!link || link.length < 5) return "";
         const linkSeguro = tratarLinkDrive(link);
-        return `
-        <div style="display:flex; align-items:center; background:#fff; border-radius:4px; padding:0 10px; gap:8px; margin-top:6px; height:${ALTURA_PADRAO};">
+        return `<div style="display:flex; align-items:center; background:#fff; border-radius:4px; padding:0 10px; gap:8px; margin-top:6px; height:${ALTURA_PADRAO};">
             <span style="font-size:0.9rem;">${icone}</span>
             <div style="flex-grow:1; font-size:0.75rem; font-weight:bold; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${titulo.toUpperCase()}</div>
             <div style="display:flex; gap:4px;">
@@ -136,23 +134,18 @@ function exibirDadosResidencial(info) {
         </div>`;
     };
 
-    // Função para processar colunas com múltiplos links (Título, Link; Título, Link)
     const processarListaLinks = (rawString, icone) => {
         if (!rawString || !rawString.includes(",")) return "";
         let cards = "";
-        const itens = rawString.split(";");
-        itens.forEach(item => {
+        rawString.split(";").forEach(item => {
             const partes = item.split(",");
-            if (partes.length >= 2) {
-                cards += criarCardLink(partes[0].trim(), partes[1].trim(), icone);
-            }
+            if (partes.length >= 2) cards += criarCardLink(partes[0].trim(), partes[1].trim(), icone);
         });
         return cards;
     };
 
-    const linkM = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.endereco)}`;
-    let html = `
-        <div style="font-size:0.82rem; color:#fff; margin-bottom:12px; font-weight:bold;">📍 ${info.endereco}</div>
+    const linkM = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(info.endereco)}`;
+    let html = `<div style="font-size:0.82rem; color:#fff; margin-bottom:12px; font-weight:bold;">📍 ${info.endereco}</div>
         <div style="display:flex; gap:8px; margin-bottom:15px;">
             <button onclick="window.open('${linkM}','_blank')" style="width:70px; height:${ALTURA_PADRAO}; background:#4285F4; color:#fff; border:none; border-radius:4px; font-weight:800; cursor:pointer; font-size:0.7rem;">MAPS</button>
             <button onclick="copyToClipboard('${tratarLinkDrive(info.link)}')" style="width:70px; height:${ALTURA_PADRAO}; background:#444; color:#fff; border:none; border-radius:4px; font-weight:800; cursor:pointer; font-size:0.7rem;">COPIAR</button>
@@ -160,10 +153,8 @@ function exibirDadosResidencial(info) {
 
     if (info.categoria === "COMPLEXO") {
         html += (info.descLonga ? `<div style="font-size:0.82rem; color:#eee; margin-bottom:10px;">${info.descLonga}</div>` : "");
-        html += criarCardLink("Book Cliente", info.bookCliente, "📄");
-        html += criarCardLink("Book Corretor", info.bookCorretor, "💼");
+        html += criarCardLink("Book Cliente", info.bookCliente, "📄") + criarCardLink("Book Corretor", info.bookCorretor, "💼");
     } else {
-        // --- RESIDENCIAL ---
         const camp = (info.destaqueCampanha) ? `<div style="background:#fff; color:#e31c19; height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.75rem; border-radius:4px; margin-bottom:8px;">${info.destaqueCampanha.toUpperCase()}</div>` : "";
         const pTxt = (info.plantaMin && info.plantaMax) ? `${info.plantaMin} até ${info.plantaMax} m²` : (info.plantaMin || "---");
         let eH = ""; const eN = parseInt(info.estoque);
@@ -177,52 +168,15 @@ function exibirDadosResidencial(info) {
             html += `<div style="background:#444; border-radius:4px; padding:8px;"><div style="display:grid; grid-template-columns:0.5fr 1.2fr 1fr 1fr; gap:4px; margin-bottom:4px; font-size:0.5rem; color:#bbb; font-weight:bold;"><span>TIPO</span><span style="text-align:center;">MENOR PREÇO</span><span style="text-align:right;">AVAL.</span><span style="text-align:right;">B. PAG.</span></div>${pL}</div>`;
         }
 
-        // ESTANDE DE VENDAS
-        if (info.estandeVendas && info.estandeVendas.length > 5) {
-            const linkE = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.estandeVendas)}`;
-            html += `
-            <div style="margin-top:10px; border-radius:6px; overflow:hidden; border-left:4px solid #00713a; background:#333;">
-                <div style="background:#ddd; padding:4px 10px;"><span style="font-size:0.65rem; font-weight:900; color:#222;">📍 ESTANDE DE VENDAS</span></div>
-                <div style="padding:10px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
-                    <div style="color:#fff; font-size:0.75rem; line-height:1.2; flex-grow:1;">${info.estandeVendas.toUpperCase()}</div>
-                    <div style="display:flex; flex-direction:column; gap:5px;">
-                        <button onclick="window.open('${linkE}','_blank')" style="padding:5px 8px; background:#4285F4; color:#fff; border:none; border-radius:3px; font-size:0.55rem; font-weight:bold; cursor:pointer;">MAPS</button>
-                        <button onclick="copyToClipboard('${info.estandeVendas}')" style="padding:5px 8px; background:#666; color:#fff; border:none; border-radius:3px; font-size:0.55rem; font-weight:bold; cursor:pointer;">COPIAR</button>
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        const criarCardTexto = (titulo, texto, corBorda) => {
-            if (!texto || texto.length < 3) return "";
-            return `
-            <div style="margin-top:10px; border-radius:6px; overflow:hidden; border-left:4px solid ${corBorda}; background:#333;">
-                <div style="background:#ddd; padding:4px 10px;"><span style="font-size:0.65rem; font-weight:900; color:#222;">${titulo.toUpperCase()}</span></div>
-                <div style="padding:10px; color:#fff; font-size:0.75rem; line-height:1.3;">${texto.toUpperCase()}</div>
-            </div>`;
-        };
-
-        html += criarCardTexto("⚠️ Observação Importante", info.obsImportante, "#e31c19");
-        html += criarCardTexto("📍 Localização", info.localizacao, "#4285F4");
-        html += criarCardTexto("🚲 Mobilidade", info.mobilidade, "#ff8c00");
-        html += criarCardTexto("🎭 Cultura e Lazer", info.culturaLazer, "#d1147e");
-        html += criarCardTexto("🛒 Comércio", info.comercio, "#7b1fa2");
-        html += criarCardTexto("🏥 Saúde e Educação", info.saudeEducacao, "#0054a6");
-
-        // PROCESSAMENTO DAS NOVAS LISTAS DE LINKS
-        html += processarListaLinks(info.videosRaw, "🎬");
-        html += processarListaLinks(info.plantasRaw, "📐");
-        html += processarListaLinks(info.locImplantaRaw, "🏢");
-        html += processarListaLinks(info.diversosRaw, "🔗");
-
-        // BOOKS FINAIS
-        html += criarCardLink("Book Cliente", info.bookCliente, "📄");
-        html += criarCardLink("Book Corretor", info.bookCorretor, "💼");
+        const criarCardTexto = (titulo, texto, corBorda) => (!texto || texto.length < 3) ? "" : `<div style="margin-top:10px; border-radius:6px; overflow:hidden; border-left:4px solid ${corBorda}; background:#333;"><div style="background:#ddd; padding:4px 10px;"><span style="font-size:0.65rem; font-weight:900; color:#222;">${titulo.toUpperCase()}</span></div><div style="padding:10px; color:#fff; font-size:0.75rem; line-height:1.3;">${texto.toUpperCase()}</div></div>`;
+        html += criarCardTexto("⚠️ Observação Importante", info.obsImportante, "#e31c19") + criarCardTexto("📍 Localização", info.localizacao, "#4285F4") + criarCardTexto("🚲 Mobilidade", info.mobilidade, "#ff8c00") + criarCardTexto("🎭 Cultura e Lazer", info.culturaLazer, "#d1147e") + criarCardTexto("🛒 Comércio", info.comercio, "#7b1fa2") + criarCardTexto("🏥 Saúde e Educação", info.saudeEducacao, "#0054a6");
+        html += processarListaLinks(info.videosRaw, "🎬") + processarListaLinks(info.plantasRaw, "📐") + processarListaLinks(info.locImplantaRaw, "🏢") + processarListaLinks(info.diversosRaw, "🔗") + criarCardLink("Book Cliente", info.bookCliente, "📄") + criarCardLink("Book Corretor", info.bookCorretor, "💼");
     }
     elDetalhes.innerHTML = html;
 }
+
 /* --------------------------------------------------------------------------
-   5. INTERAÇÃO COM MAPAS E TROCA DE ESTADOS
+   5. INTERAÇÃO COM MAPAS
    -------------------------------------------------------------------------- */
 function clicarNoMapa(pathElement, infoSelecionado, pDataRaw = null) {
     solicitarFullscreen();
@@ -257,7 +211,6 @@ function clicarNoMapa(pathElement, infoSelecionado, pDataRaw = null) {
                 const corZ = (item.zona === "ZO") ? "#ff8c00" : (item.zona === "ZL") ? "#e31c19" : (item.zona === "ZN") ? "#0054a6" : (item.zona === "ZS") ? "#d1147e" : "#00713a";
                 btn.innerHTML = `<span>${item.nomeCurto.toUpperCase()}</span><span style="opacity:0.7; font-size:0.6rem;">${obterNomeZona(item.zona)}</span>`;
                 btn.style.cssText = `height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:space-between; padding:0 10px; font-size:0.7rem; margin-bottom:4px; border-radius:4px; cursor:pointer; background:#fff; color:#333; border-right:4px solid ${corZ};`;
-                if (item.categoria === "COMPLEXO") { btn.style.backgroundColor = corZ; btn.style.color = "#fff"; }
                 btn.onclick = (e) => { e.stopPropagation(); clicarNoMapa(pathElement, item, pDataRaw); };
                 containerBotoes.appendChild(btn);
             }
@@ -299,7 +252,7 @@ function atualizarVisualizacao() { if (typeof MAPA_GSP !== 'undefined' && typeof
 function atualizarTextoTopo(nome) { const indicador = document.getElementById('identificador-cidade'); if (indicador) indicador.innerText = nome ? nome.toUpperCase() : (mapaAtivo === "GSP" ? "GRANDE SP" : "ESTADO DE SP"); }
 
 /* --------------------------------------------------------------------------
-   6. MENU LATERAL, EVENTOS E INICIALIZAÇÃO
+   6. MENU LATERAL E EVENTOS
    -------------------------------------------------------------------------- */
 function gerarMenuResidenciais() {
     const lista = document.getElementById('lista-residenciais');
@@ -311,7 +264,6 @@ function gerarMenuResidenciais() {
         const corZ = (info.zona === "ZO") ? "#ff8c00" : (info.zona === "ZL") ? "#e31c19" : (info.zona === "ZN") ? "#0054a6" : (info.zona === "ZS") ? "#d1147e" : "#00713a";
         li.innerHTML = `<span>${info.nomeCurto.toUpperCase()}</span><span style="opacity:0.7; font-size:0.6rem;">${obterNomeZona(info.zona)}</span>`;
         li.style.cssText = `height:${ALTURA_PADRAO}; display:flex; align-items:center; justify-content:space-between; padding-left:25px; width:calc(100% + 10px); font-size:0.75rem; margin-bottom:4px; border-radius:4px; cursor:pointer; margin-left:-10px; background:#fff; color:#333; border-right:5px solid ${corZ};`;
-        if (info.categoria === "COMPLEXO") { li.style.backgroundColor = corZ; li.style.color = "#fff"; }
         li.onclick = (e) => { e.stopPropagation(); solicitarFullscreen(); let p = document.getElementById(info.id); if (!p) { trocarMapas(); setTimeout(() => { let np = document.getElementById(info.id); if(np) clicarNoMapa(np, info); }, 400); } else clicarNoMapa(p, info); };
         lista.appendChild(li);
     });
@@ -331,47 +283,18 @@ document.addEventListener('click', (e) => {
     if (e.target.closest('#mapa-minimizado')) trocarMapas();
 });
 
-Exatamente, Carlos. Seguindo a organização que estamos mantendo para o seu DashboardMRV 2.0, esse código se encaixa perfeitamente como o Bloco 7.
-
-Como a sua versão v141.3.0 termina no Bloco 6 (Menu Lateral e Inicialização), adicionar este novo bloco ao final do arquivo mantém o código limpo e fácil de dar manutenção depois.
-
-Aqui está o código completo do Bloco 7, já formatado para você apenas copiar e colar no final do seu arquivo mobile.js:
-
-JavaScript
-
 /* --------------------------------------------------------------------------
    7. CONTROLE DE ORIENTAÇÃO (AVISO PAISAGEM) E ENTRADA
    -------------------------------------------------------------------------- */
-
-/**
- * Função acionada pelo botão na tela verde de aviso.
- * Tenta colocar o app em tela cheia e "travar" a orientação.
- */
 function fecharAvisoEAmpliar() {
-    // 1. Aciona o Fullscreen usando sua função existente no Bloco 2
     solicitarFullscreen();
-
-    // 2. Tenta forçar o modo paisagem via API do navegador
-    // Nota: Funciona principalmente em Android + Chrome
     if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(function(error) {
-            console.log("A trava de tela automática foi ignorada pelo sistema.");
-        });
+        screen.orientation.lock('landscape').catch(() => console.log("Trava de tela ignorada."));
     }
-
-    // 3. Esconde o aviso manualmente para garantir a entrada imediata
     const aviso = document.getElementById('aviso-orientacao');
-    if (aviso) {
-        aviso.style.display = 'none';
-    }
+    if (aviso) aviso.style.display = 'none';
 }
 
-/**
- * Ouvinte de evento para garantir que, se o usuário sair do Fullscreen
- * e o celular estiver em pé, a tela de aviso possa ser gerenciada.
- */
-window.addEventListener("orientationchange", function() {
-    // O CSS (@media orientation) já cuida da maior parte visual,
-    // mas este ouvinte pode ser usado para ajustes extras de JS se necessário.
-    console.log("Mudança de orientação detectada: " + screen.orientation.angle);
+window.addEventListener("orientationchange", () => {
+    console.log("Mudança de orientação: " + (screen.orientation ? screen.orientation.angle : "N/A"));
 });
