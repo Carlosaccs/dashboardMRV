@@ -51,7 +51,24 @@ html, body {
     opacity: 0.5;
     transform: scale(0.9);
 }
+/* --- AJUSTE DOS BOTÕES NA FAIXA VERDE --- */
+#btn-menu, #btn-fullscreen {
+    width: 45px;      /* Área de clique maior para o polegar */
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    margin: 10px 0;   /* Espaçamento entre os botões */
+}
 
+/* Garante que o SVG acompanhe o tamanho que definimos no JS */
+#btn-fullscreen svg, #btn-menu svg {
+    display: block;
+    transition: transform 0.2s; /* Efeito suave ao clicar */
+}
 /* ==========================================================================
    BLOCO 3: MENU LATERAL
    ========================================================================== */
