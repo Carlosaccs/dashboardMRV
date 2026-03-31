@@ -217,48 +217,31 @@ path.commrv:hover, path.ativo { fill: var(--mrv-laranja) !important; stroke: #00
 .sidebar-dir div[style*="border-left"] strong { font-size: 12px !important; }
 
 /* ==========================================================================
-   7. TABELAS E CARDS - AJUSTE CIRÚRGICO MINIATURAS
+   7. TABELAS E CARDS - HOVER COM MINIATURA FLUTUANTE
    ========================================================================== */
 .card-material-item { 
     background: #fff; 
     border: 1px solid #e0e0e0; 
-    border-radius: 8px; 
-    padding: 10px; 
-    margin-bottom: 12px; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 6px; 
+    padding: 8px 12px; 
+    margin-bottom: 8px; 
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.card-info-top {
-    display: flex;
-    align-items: center;
     gap: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.card-preview-box {
-    width: 100%;
-    height: 160px; /* Altura fixa para a miniatura não esmagar */
-    border-radius: 4px;
-    overflow: hidden;
-    background: #f0f0f0;
-    border: 1px solid #eee;
-}
+.card-info-top { display: flex; align-items: center; gap: 8px; }
+.card-text { font-size: 0.72rem; font-weight: bold; color: #333; }
+.card-icon { font-size: 0.9rem; }
 
-.card-preview-box iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
+.card-actions-bottom { display: flex; gap: 8px; position: relative; }
 
-.card-actions-bottom {
-    display: flex;
-    gap: 5px;
-}
+/* Wrapper do botão abrir para posicionar o balão */
+.btn-hover-wrapper { flex: 1; position: relative; }
 
 .card-btn-abrir, .card-btn-copiar { 
-    flex: 1; /* Faz os dois botões terem o mesmo tamanho lado a lado */
+    width: 100%;
     height: 28px; 
     display: flex; 
     align-items: center; 
@@ -272,8 +255,42 @@ path.commrv:hover, path.ativo { fill: var(--mrv-laranja) !important; stroke: #00
     text-decoration: none;
 }
 
-.card-btn-abrir { background: var(--mrv-verde) !important; }
-.card-btn-copiar { background: var(--mrv-laranja) !important; }
+.card-btn-abrir { background: var(--mrv-verde) !important; position: relative; }
+.card-btn-copiar { background: var(--mrv-laranja) !important; flex: 1; }
 
-.card-text { font-size: 0.75rem; font-weight: bold; color: #333; }
-.card-icon { font-size: 1rem; }
+/* MINIATURA ESCONDIDA (BALÃO FLUTUANTE) */
+.card-preview-hover {
+    display: none; /* Fica oculto */
+    position: absolute;
+    bottom: 35px; /* Aparece acima do botão */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px; 
+    height: 180px;
+    background: white;
+    border: 2px solid var(--mrv-verde);
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    overflow: hidden;
+    pointer-events: none; /* Importante: o mouse ignora o iframe para não bugar o hover */
+}
+
+.card-preview-hover iframe { width: 100%; height: 100%; border: none; }
+
+/* MOSTRAR NO HOVER */
+.card-btn-abrir:hover .card-preview-hover {
+    display: block;
+}
+
+/* Triângulo (Seta) do Balão */
+.card-preview-hover::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid var(--mrv-verde);
+}
