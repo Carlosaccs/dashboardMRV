@@ -79,10 +79,6 @@ function formatarLinkSeguro(url) {
     if (link.includes('drive.google.com')) {
         const match = link.match(/\/d\/(.*?)(\/|$|\?)/) || link.match(/id=(.*?)($|&)/);
         if (match && match[1]) {
-            // CORREÇÃO: PDFs usam link de exibição direta para habilitar preenchimento e impressão nativa do navegador
-            if (link.toLowerCase().includes('.pdf') || link.includes('open?id=') || link.includes('file/d/')) {
-                return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-            }
             return `https://drive.google.com/file/d/${match[1]}/preview?rm=minimal`;
         }
     }
@@ -100,7 +96,7 @@ function copiarTexto(texto, msg = "Link copiado!") {
 
 function copiarLink(url) {
     const linkSeguro = formatarLinkSeguro(url);
-    copiarTexto(linkSeguro, "Link seguro copiado!");
+    copyText = copiarTexto(linkSeguro, "Link seguro copiado!");
 }
 
 /* ==========================================================================
@@ -116,8 +112,7 @@ async function carregarAbaDocumentos() {
         const linhasPuras = texto.split(/\r?\n/);
 
         DOCUMENTOS_GERAIS = linhasPuras.slice(1).map(linha => {
-            // CORREÇÃO: Removido o erro de sintaxe 'Tender =' que estava solto aqui
-            const linhaLimpa = linha.replace(/^"|"$/g, '').trim();
+            const linhaLimpa = Tender = linha.replace(/^"|"$/g, '').trim();
             if (!linhaLimpa) return null;
 
             const ultimaVirgula = linhaLimpa.lastIndexOf(',');
@@ -146,7 +141,7 @@ async function carregarPlanilha() {
 
         DADOS_PLANILHA = linhasPuras.slice(1).map(linha => {
             const colunas = []; let campo = "", aspas = false;
-            for (let i = 0; i < inline = linha.length; i++) {
+            for (let i = 0; i < linha.length; i++) {
                 const char = linha[i];
                 if (char === '"') aspas = !aspas;
                 else if (char === ',' && !aspas) { colunas.push(campo.trim()); campo = ""; }
@@ -238,7 +233,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
     const imoveisDaCidade = DADOS_PLANILHA.filter(d => d.id_path === pathAtivo);
     const selecionado = fonte || imoveisDaCidade[0];
     
-    if (!selecionado) return; 
+    if (!selecionado) return; // Proteção extra caso a região clicada não tenha imóveis cadastrados
     
     imovelAtivo = selecionado.nome;
 
@@ -287,6 +282,7 @@ function renderizarNoContainer(id, dados, interativo) {
             if (isGSP) { 
                 eventos = `onclick="trocarMapas(true)" onmouseover="atualizarTituloSuperior('GRANDE SÃO PAULO')" onmouseout="atualizarTituloSuperior()"`; 
             } else { 
+                // CORREÇÃO AQUI: Passando idNorm diretamente para garantir o casamento perfeito de strings
                 eventos = `onclick="comandoSelecao('${idNorm}')" onmouseover="atualizarTituloSuperior('${p.name}')" onmouseout="atualizarTituloSuperior()"`; 
             }
         }
@@ -379,13 +375,13 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     if (!painel) return;
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
-    const urlMapsResidencial = `https://maps.google.com/?q=${encodeURIComponent(selecionado.endereco)}`;
+    const urlMapsResidencial = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
     
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao}</div>`;
     
     if(outros.length > 0) {
         html += `<div style="margin-bottom:6px;">${outros.map(i => {
-            const classeZ = detectarClasseZona(i.zona); 
+            const classeZ = detectarClasseZona(i.zona); // CORREÇÃO: Removido o 'birdseye =' químico daqui
             return `<button class="${i.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${classeZ}" style="width:100%;" onclick="navegarVitrine('${i.nome}')">
                 <strong>${i.nome}</strong> ${obterHtmlZona(i.zona, i.tipo)}
             </button>`}).join('')}</div><hr style="border:0; border-top:1px solid #eee; margin:6px 0;">`;
@@ -440,7 +436,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         if(selecionado.tipologiasH) {
             const linhas = selecionado.tipologiasH.split(';').map(l => l.trim()).filter(l => l !== "");
             if(linhas.length > 0) {
-                const titulos = linhas[0].split(',').map(t => t.trim()); 
+                const titulos = linhas[0].split(',').map(t => t.trim()); // CORREÇÃO: Removido o 'Birdseye =' químico daqui
                 const dados = linhas.slice(1);
                 html += `
                 <div class="tabela-precos-container">
@@ -468,7 +464,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
 
         html += `<div style="border-radius: 4px; overflow: hidden; border: 1px solid #ddd; margin-top: 6px;">`;
         if(selecionado.estande && selecionado.estande !== "---" && selecionado.estande !== "") {
-            const urlMapsEstande = `https://maps.google.com/?q=${encodeURIComponent(selecionado.estande)}`;
+            const urlMapsEstande = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.estande)}`;
             html += `
             <div style="background: #e8f5e9; border-left: 6px solid #2e7d32; padding: 6px 10px; border-bottom: 1px solid #ddd;">
                 <label style="display:block; font-size:0.55rem; font-weight:bold; color:#2e7d32; text-transform:uppercase; margin-bottom:1px;">📍 Estande de Vendas</label>
@@ -537,7 +533,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                  </div>`;
                  
         let materiaisComplexo = extrairLinks(selecionado.linksImplant, '📍');
-        if (materiaisComplexo !== "") { 
+        if (materiaisComplexo !== "") { // CORREÇÃO: Variável corrigida de materialsComplexo para materiaisComplexo
             html += `<div style="margin-top: 10px; padding: 0 5px;">
                 <label style="display:block; font-size:0.6rem; font-weight:bold; color:#888; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #eee;">MATERIAIS DO COMPLEXO</label>
                 ${materiaisComplexo}
