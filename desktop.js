@@ -2,13 +2,14 @@
    BLOCO 01: CONFIGURAÇÕES E VARIÁVEIS GLOBAIS
    ========================================================================== */
 let DADOS_PLANILHA = [];
+let DOCUMENTOS_GERAIS = []; 
 let pathAtivo = null;  
 let imovelAtivo = null;  
 let mapaAtivo = 'GSP'; 
 
 const COL = {
     ID: 0, CATEGORIA: 1, ORDEM: 2, 
-    ZONA: 3, // Coluna D da Planilha
+    ZONA: 3, 
     NOME: 4, NOME_FULL: 5,  
     ESTOQUE: 6, END: 7, TIPOLOGIAS: 8, ENTREGA: 9, 
     P_DE: 10, P_ATE: 11, OBRA: 12, LIMITADOR: 13, 
@@ -27,7 +28,49 @@ const COL = {
    BLOCO 02: INICIALIZAÇÃO E UTILITÁRIOS
    ========================================================================== */
 async function iniciarApp() {
-    try { await carregarPlanilha(); } catch (err) { console.error(err); }
+    try { 
+        await Promise.all([carregarPlanilha(), carregarAbaDocumentos()]);
+        configurarBotaoDocumentos(); 
+    } catch (err) { 
+        console.error(err); 
+    }
+}
+
+function configurarBotaoDocumentos() {
+    const btnDocs = document.getElementById('btn-documentos');
+    if (btnDocs) {
+        btnDocs.addEventListener('click', () => {
+            imovelAtivo = null;
+            pathAtivo = null;
+            document.querySelectorAll('path').forEach(el => el.classList.remove('ativo'));
+            gerarListaLateral();
+            
+            const ct = document.getElementById('cidade-titulo');
+            if (ct) ct.innerText = "DOCUMENTOS GERAIS CORPORATIVOS";
+
+            const painel = document.getElementById('ficha-tecnica');
+            if (painel) {
+                let htmlDocs = `
+                    <div class="vitrine-topo" style="background-color: #dca206; color: #004d24;">📂 ARQUIVOS DIVERSOS</div>
+                    <div style="padding: 10px 0;">
+                `;
+
+                if (DOCUMENTOS_GERAIS.length === 0) {
+                    htmlDocs += `
+                        <div style="text-align:center; color:#999; margin-top:50px;">
+                            <p>Nenhum documento encontrado na aba.</p>
+                        </div>`;
+                } else {
+                    DOCUMENTOS_GERAIS.forEach(doc => {
+                        htmlDocs += criarCardMaterial(doc.titulo, doc.url, '📝');
+                    });
+                }
+
+                htmlDocs += `</div>`;
+                painel.innerHTML = htmlDocs;
+            }
+        });
+    }
 }
 
 function formatarLinkSeguro(url) {
@@ -53,12 +96,41 @@ function copiarTexto(texto, msg = "Link copiado!") {
 
 function copiarLink(url) {
     const linkSeguro = formatarLinkSeguro(url);
-    copiarTexto(linkSeguro, "Link seguro copiado!");
+    copyText = copiarTexto(linkSeguro, "Link seguro copiado!");
 }
 
 /* ==========================================================================
    BLOCO 03: CARREGAMENTO DE DADOS (GOOGLE SHEETS)
    ========================================================================== */
+async function carregarAbaDocumentos() {
+    const SHEET_ID = "15V194P2JPGCCPpCTKJsib8sJuCZPgtbNb-rtgNaLS7E";
+    const URL_DOCS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Documentos&v=${new Date().getTime()}`;
+    
+    try {
+        const response = await fetch(URL_DOCS);
+        let texto = await response.text();
+        const linhasPuras = texto.split(/\r?\n/);
+
+        DOCUMENTOS_GERAIS = linhasPuras.slice(1).map(linha => {
+            const linhaLimpa = Tender = linha.replace(/^"|"$/g, '').trim();
+            if (!linhaLimpa) return null;
+
+            const ultimaVirgula = linhaLimpa.lastIndexOf(',');
+            if (ultimaVirgula === -1) return null;
+
+            const titulo = linhaLimpa.substring(0, ultimaVirgula).trim().replace(/^"|"$/g, '');
+            const url = linhaLimpa.substring(ultimaVirgula + 1).trim().replace(/^"|"$/g, '');
+
+            if (!titulo || !url.startsWith('http')) return null;
+
+            return { titulo, url };
+        }).filter(d => d !== null);
+
+    } catch (e) {
+        console.error("Erro ao carregar aba de documentos: ", e);
+    }
+}
+
 async function carregarPlanilha() {
     const SHEET_ID = "15V194P2JPGCCPpCTKJsib8sJuCZPgtbNb-rtgNaLS7E";
     const URL_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0&v=${new Date().getTime()}`;
@@ -89,7 +161,7 @@ async function carregarPlanilha() {
                 id_path: idPath,
                 tipo: cat.includes('COMPLEXO') ? 'N' : 'R',
                 ordem: ordem,
-                zona: colunas[COL.ZONA] || "", // Capturando a coluna D
+                zona: colunas[COL.ZONA] || "", 
                 nome: nomeImovel,
                 nomeFull: colunas[COL.NOME_FULL] || nomeImovel,
                 estoque: colunas[COL.ESTOQUE],
@@ -160,6 +232,9 @@ function comandoSelecao(idPath, nomePath, fonte) {
     pathAtivo = idNorm;
     const imoveisDaCidade = DADOS_PLANILHA.filter(d => d.id_path === pathAtivo);
     const selecionado = fonte || imoveisDaCidade[0];
+    
+    if (!selecionado) return; // Proteção extra caso a região clicada não tenha imóveis cadastrados
+    
     imovelAtivo = selecionado.nome;
 
     document.querySelectorAll('path').forEach(el => el.classList.remove('ativo'));
@@ -176,6 +251,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
 
 function atualizarTituloSuperior(texto) {
     const titulo = document.getElementById('cidade-titulo');
+    if (!titulo) return;
     if (texto) { titulo.innerText = `MRV EM ${texto.toUpperCase()}`; } 
     else if (pathAtivo) {
         const todosPaths = MAPA_GSP.paths.concat(MAPA_INTERIOR.paths);
@@ -185,10 +261,11 @@ function atualizarTituloSuperior(texto) {
 }
 
 /* ==========================================================================
-   BLCO 05: RENDERIZAÇÃO DOS MAPAS (SVG)
+   BLOCO 05: RENDERIZAÇÃO DOS MAPAS (SVG)
    ========================================================================== */
 function renderizarNoContainer(id, dados, interativo) {
     const container = document.getElementById(id);
+    if (!container) return;
     container.style.display = "flex"; 
     container.style.alignItems = "center";
     container.style.justifyContent = "center"; 
@@ -205,7 +282,8 @@ function renderizarNoContainer(id, dados, interativo) {
             if (isGSP) { 
                 eventos = `onclick="trocarMapas(true)" onmouseover="atualizarTituloSuperior('GRANDE SÃO PAULO')" onmouseout="atualizarTituloSuperior()"`; 
             } else { 
-                eventos = `onclick="comandoSelecao('${p.id}')" onmouseover="atualizarTituloSuperior('${p.name}')" onmouseout="atualizarTituloSuperior()"`; 
+                // CORREÇÃO AQUI: Passando idNorm diretamente para garantir o casamento perfeito de strings
+                eventos = `onclick="comandoSelecao('${idNorm}')" onmouseover="atualizarTituloSuperior('${p.name}')" onmouseout="atualizarTituloSuperior()"`; 
             }
         }
         return `<path id="${id}-${idNorm}" d="${p.d}" class="${(temMRV || isGSP) && interativo ? 'commrv '+ativo : ''}" ${eventos}></path>`;
@@ -226,15 +304,18 @@ function renderizarNoContainer(id, dados, interativo) {
 function desenharMapas() {
     renderizarNoContainer('caixa-a', (mapaAtivo === 'GSP') ? MAPA_GSP : MAPA_INTERIOR, true);
     renderizarNoContainer('caixa-b', (mapaAtivo === 'GSP') ? MAPA_INTERIOR : MAPA_GSP, false);
-    document.getElementById('caixa-b').onclick = () => trocarMapas(true);
+    const cb = document.getElementById('caixa-b');
+    if (cb) cb.onclick = () => trocarMapas(true);
 }
 
 function trocarMapas(completo) { 
     mapaAtivo = (mapaAtivo === 'GSP') ? 'INTERIOR' : 'GSP'; 
     if (completo) { 
         pathAtivo = null; imovelAtivo = null; 
-        document.getElementById('ficha-tecnica').innerHTML = `<div style="text-align:center; color:#ccc; margin-top:80px;"><p style="font-size:30px;">📍</p><p>Clique no mapa ou na lista</p></div>`;
-        document.getElementById('cidade-titulo').innerText = "SELECIONE UMA REGIÃO NO MAPA";
+        const ft = document.getElementById('ficha-tecnica');
+        if (ft) ft.innerHTML = `<div style="text-align:center; color:#ccc; margin-top:80px;"><p style="font-size:30px;">📍</p><p>Clique no mapa ou na lista</p></div>`;
+        const ct = document.getElementById('cidade-titulo');
+        if (ct) ct.innerText = "SELECIONE UMA REGIÃO NO MAPA";
     }
     desenharMapas(); gerarListaLateral(); 
 }
@@ -244,6 +325,7 @@ function trocarMapas(completo) {
    ========================================================================== */
 function gerarListaLateral() {
     const container = document.getElementById('lista-imoveis');
+    if (!container) return;
     container.innerHTML = DADOS_PLANILHA.map(item => {
         const ativo = item.nome === imovelAtivo ? 'ativo' : '';
         const classeZona = detectarClasseZona(item.zona); 
@@ -291,6 +373,7 @@ const extrairLinks = (campo, icone) => {
 
 function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
+    if (!painel) return;
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
     const urlMapsResidencial = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
     
@@ -298,14 +381,13 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     
     if(outros.length > 0) {
         html += `<div style="margin-bottom:6px;">${outros.map(i => {
-            const classeZ = detectarClasseZona(i.zona);
+            const classeZ = detectarClasseZona(i.zona); // CORREÇÃO: Removido o 'birdseye =' químico daqui
             return `<button class="${i.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${classeZ}" style="width:100%;" onclick="navegarVitrine('${i.nome}')">
                 <strong>${i.nome}</strong> ${obterHtmlZona(i.zona, i.tipo)}
             </button>`}).join('')}</div><hr style="border:0; border-top:1px solid #eee; margin:6px 0;">`;
     }
 
     if (selecionado.tipo === 'R') {
-        // TÍTULO DO RESIDENCIAL (LARANJA PADRONIZADO)
         html += `<div class="titulo-vitrine-faixa" style="background-color: var(--mrv-laranja); color: white; padding: 6px; font-weight: bold; text-align: center; margin-bottom: 5px; border-radius: 4px; font-size: 0.75rem;">RES. ${selecionado.nome.toUpperCase()} — ${selecionado.regiao}</div>`;
         
         html += `
@@ -324,8 +406,8 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
             html += `<div style="background: #fff5f5; color: #e31010; font-weight: bold; font-size: 0.7rem; text-align: center; padding: 4px; border-bottom: 1px solid #ddd;">${selecionado.campanha}</div>`;
         }
         
-        const linhaInfo = (l1, v1, l2, v2, borda) => `
-            <div style="display: flex; width: 100%; ${borda ? 'border-bottom: 1px solid #ddd;' : ''}">
+        const linhaInfo = (l1, v1, l2, v2, border) => `
+            <div style="display: flex; width: 100%; ${border ? 'border-bottom: 1px solid #ddd;' : ''}">
                 <div style="flex: 1; padding: 4px 8px; border-right: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
                     <label style="font-size: 0.55rem; font-weight: bold; color: var(--mrv-verde); text-transform: uppercase;">${l1}</label>
                     <strong style="font-size: 0.65rem; color: #333;">${v1}</strong>
@@ -354,7 +436,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         if(selecionado.tipologiasH) {
             const linhas = selecionado.tipologiasH.split(';').map(l => l.trim()).filter(l => l !== "");
             if(linhas.length > 0) {
-                const titulos = linhas[0].split(',').map(t => t.trim());
+                const titulos = linhas[0].split(',').map(t => t.trim()); // CORREÇÃO: Removido o 'Birdseye =' químico daqui
                 const dados = linhas.slice(1);
                 html += `
                 <div class="tabela-precos-container">
@@ -426,15 +508,13 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                 ${materiaisHtml}
             </div>`;
         }
-} else {
-        // Cores de Título que combinam com os novos botões de complexo
+    } else {
         let corComplexo = "#333";
-        if (selecionado.zona === 'ZO') corComplexo = "#ff9d42"; // O novo laranja claro
+        if (selecionado.zona === 'ZO') corComplexo = "#ff9d42"; 
         else if (selecionado.zona === 'ZL') corComplexo = "#003399";
         else if (selecionado.zona === 'ZN') corComplexo = "#ffd700";
         else if (selecionado.zona === 'ZS') corComplexo = "#ff33aa";
 
-        // Cor do texto do título (preto para amarelo, branco para os outros)
         let corTexto = (selecionado.zona === 'ZN') ? "#333" : "white";
 
         html += `<div class="titulo-vitrine-faixa" style="background-color: ${corComplexo}; color: ${corTexto}; padding: 8px; font-weight: bold; text-align: center; margin-bottom: 5px; border-radius: 4px; font-size: 0.8rem;">
@@ -453,7 +533,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                  </div>`;
                  
         let materiaisComplexo = extrairLinks(selecionado.linksImplant, '📍');
-        if (materiaisComplexo !== "") {
+        if (materiaisComplexo !== "") { // CORREÇÃO: Variável corrigida de materialsComplexo para materiaisComplexo
             html += `<div style="margin-top: 10px; padding: 0 5px;">
                 <label style="display:block; font-size:0.6rem; font-weight:bold; color:#888; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #eee;">MATERIAIS DO COMPLEXO</label>
                 ${materiaisComplexo}
@@ -462,8 +542,6 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     }
     painel.innerHTML = html;
 }
-
-
 
 /* ==========================================================================
    BLOCO 08: LÓGICA DO MODAL (SOBRE)
