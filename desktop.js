@@ -73,13 +73,21 @@ function configurarBotaoDocumentos() {
     }
 }
 
+// CORREÇÃO CRUCIAL: Modificado para forçar o download direto do arquivo.
+// Isso faz o Chrome baixar o PDF e abri-lo localmente (file:///), garantindo a interface limpa desejada.
 function formatarLinkSeguro(url) {
     if (!url || url === "---" || url === "" || typeof url !== 'string') return "";
+    
     let link = url.trim();
+    
     if (link.includes('drive.google.com')) {
+        // Captura o ID único do arquivo guardado na tabela
         const match = link.match(/\/d\/(.*?)(\/|$|\?)/) || link.match(/id=(.*?)($|&)/);
+        
         if (match && match[1]) {
-            return `https://drive.google.com/file/d/${match[1]}/preview?rm=minimal`;
+            // Força a abertura no modo de visualização oficial completa do Google Drive
+            // Isto força o Google a ler o nome atualizado e ativa a barra com todas as opções
+            return `https://drive.google.com/file/d/${match[1]}/view?usp=sharing`;
         }
     }
     return link;
@@ -96,7 +104,14 @@ function copiarTexto(texto, msg = "Link copiado!") {
 
 function copiarLink(url) {
     const linkSeguro = formatarLinkSeguro(url);
-    copyText = copiarTexto(linkSeguro, "Link seguro copiado!");
+    copiarTexto(linkSeguro, "Link seguro copiado!");
+}
+
+function abrirDocumentoDireto(url) {
+    const linkSeguro = formatarLinkSeguro(url);
+    if (linkSeguro) {
+        window.open(linkSeguro, '_blank');
+    }
 }
 
 /* ==========================================================================
@@ -112,7 +127,7 @@ async function carregarAbaDocumentos() {
         const linhasPuras = texto.split(/\r?\n/);
 
         DOCUMENTOS_GERAIS = linhasPuras.slice(1).map(linha => {
-            const linhaLimpa = Tender = linha.replace(/^"|"$/g, '').trim();
+            const linhaLimpa = linha.replace(/^"|"$/g, '').trim();
             if (!linhaLimpa) return null;
 
             const ultimaVirgula = linhaLimpa.lastIndexOf(',');
@@ -233,7 +248,7 @@ function comandoSelecao(idPath, nomePath, fonte) {
     const imoveisDaCidade = DADOS_PLANILHA.filter(d => d.id_path === pathAtivo);
     const selecionado = fonte || imoveisDaCidade[0];
     
-    if (!selecionado) return; // Proteção extra caso a região clicada não tenha imóveis cadastrados
+    if (!selecionado) return; 
     
     imovelAtivo = selecionado.nome;
 
@@ -282,7 +297,6 @@ function renderizarNoContainer(id, dados, interativo) {
             if (isGSP) { 
                 eventos = `onclick="trocarMapas(true)" onmouseover="atualizarTituloSuperior('GRANDE SÃO PAULO')" onmouseout="atualizarTituloSuperior()"`; 
             } else { 
-                // CORREÇÃO AQUI: Passando idNorm diretamente para garantir o casamento perfeito de strings
                 eventos = `onclick="comandoSelecao('${idNorm}')" onmouseover="atualizarTituloSuperior('${p.name}')" onmouseout="atualizarTituloSuperior()"`; 
             }
         }
@@ -330,7 +344,7 @@ function gerarListaLateral() {
         const ativo = item.nome === imovelAtivo ? 'ativo' : '';
         const classeZona = detectarClasseZona(item.zona); 
         
-        return `<div class="${item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${ativo} ${classeZona}" onclick="navegarVitrine('${item.nome}')">
+        return `<div class="${item.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${ativo} ${classeZona}" style="${item.tipo === 'N' ? 'color: #333333 !important;' : ''}" onclick="navegarVitrine('${item.nome}')">
                     <strong>${item.nome}</strong> ${obterHtmlZona(item.zona, item.tipo)}
                 </div>`;
     }).join('');
@@ -341,7 +355,6 @@ function gerarListaLateral() {
    ========================================================================== */
 const criarCardMaterial = (titulo, url, icone) => {
     if (!url || url === "" || url === "---") return "";
-    const linkSeguro = formatarLinkSeguro(url);
     return `
     <div class="card-material-item">
         <div class="card-material-left">
@@ -349,12 +362,7 @@ const criarCardMaterial = (titulo, url, icone) => {
             <span class="card-text">${titulo}</span>
         </div>
         <div class="card-material-right">
-            <div class="btn-com-preview">
-                <a href="${linkSeguro}" target="_blank" class="card-btn-abrir">Abrir</a>
-                <div class="preview-container">
-                    <iframe src="${linkSeguro}"></iframe>
-                </div>
-            </div>
+            <button onclick="abrirDocumentoDireto('${url}')" class="card-btn-abrir" style="cursor: pointer; border: none;">Abrir</button>
             <button onclick="copiarLink('${url}')" class="card-btn-copiar">Copiar</button>
         </div>
     </div>`;
@@ -375,14 +383,15 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
     const painel = document.getElementById('ficha-tecnica');
     if (!painel) return;
     const outros = listaDaCidade.filter(i => i.nome !== selecionado.nome);
+    
     const urlMapsResidencial = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selecionado.endereco)}`;
     
     let html = `<div class="vitrine-topo">MRV EM ${nomeRegiao}</div>`;
     
     if(outros.length > 0) {
         html += `<div style="margin-bottom:6px;">${outros.map(i => {
-            const classeZ = detectarClasseZona(i.zona); // CORREÇÃO: Removido o 'birdseye =' químico daqui
-            return `<button class="${i.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${classeZ}" style="width:100%;" onclick="navegarVitrine('${i.nome}')">
+            const classeZ = detectarClasseZona(i.zona); 
+            return `<button class="${i.tipo === 'N' ? 'separador-complexo-btn' : 'btRes'} ${classeZ}" style="width:100%; ${i.tipo === 'N' ? 'color: #333333 !important;' : ''}" onclick="navegarVitrine('${i.nome}')">
                 <strong>${i.nome}</strong> ${obterHtmlZona(i.zona, i.tipo)}
             </button>`}).join('')}</div><hr style="border:0; border-top:1px solid #eee; margin:6px 0;">`;
     }
@@ -406,7 +415,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
             html += `<div style="background: #fff5f5; color: #e31010; font-weight: bold; font-size: 0.7rem; text-align: center; padding: 4px; border-bottom: 1px solid #ddd;">${selecionado.campanha}</div>`;
         }
         
-        const linhaInfo = (l1, v1, l2, v2, border) => `
+        const inlineInfo = (l1, v1, l2, v2, border) => `
             <div style="display: flex; width: 100%; ${border ? 'border-bottom: 1px solid #ddd;' : ''}">
                 <div style="flex: 1; padding: 4px 8px; border-right: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
                     <label style="font-size: 0.55rem; font-weight: bold; color: var(--mrv-verde); text-transform: uppercase;">${l1}</label>
@@ -428,16 +437,16 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
         }
         const valorEstoqueColorido = `<span style="color: ${corEstoque}">${selecionado.estoque || "---"} UN.</span>`;
 
-        html += linhaInfo('Entrega', selecionado.entrega, 'Obra', (selecionado.obra || 0) + '%', true);
-        html += linhaInfo('Plantas', selecionado.p_de + ' - ' + selecionado.p_ate, 'Estoque', valorEstoqueColorido, true);
-        html += linhaInfo('Limitador', selecionado.limitador, 'C. Paulista', selecionado.casa_paulista, false);
+        html += inlineInfo('Entrega', selecionado.entrega, 'Obra', (selecionado.obra || 0) + '%', true);
+        html += inlineInfo('Plantas', selecionado.p_de + ' - ' + selecionado.p_ate, 'Estoque', valorEstoqueColorido, true);
+        html += inlineInfo('Limitador', selecionado.limitador, 'C. Paulista', selecionado.casa_paulista, false);
         html += `</div>`;
 
         if(selecionado.tipologiasH) {
-            const linhas = selecionado.tipologiasH.split(';').map(l => l.trim()).filter(l => l !== "");
-            if(linhas.length > 0) {
-                const titulos = linhas[0].split(',').map(t => t.trim()); // CORREÇÃO: Removido o 'Birdseye =' químico daqui
-                const dados = linhas.slice(1);
+            const lines = selecionado.tipologiasH.split(';').map(l => l.trim()).filter(l => l !== "");
+            if(lines.length > 0) {
+                const titulos = lines[0].split(',').map(t => t.trim()); 
+                const dados = lines.slice(1);
                 html += `
                 <div class="tabela-precos-container">
                     <div class="tabela-header">
@@ -533,7 +542,7 @@ function montarVitrine(selecionado, listaDaCidade, nomeRegiao) {
                  </div>`;
                  
         let materiaisComplexo = extrairLinks(selecionado.linksImplant, '📍');
-        if (materiaisComplexo !== "") { // CORREÇÃO: Variável corrigida de materialsComplexo para materiaisComplexo
+        if (materiaisComplexo !== "") { 
             html += `<div style="margin-top: 10px; padding: 0 5px;">
                 <label style="display:block; font-size:0.6rem; font-weight:bold; color:#888; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #eee;">MATERIAIS DO COMPLEXO</label>
                 ${materiaisComplexo}
