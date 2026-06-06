@@ -139,10 +139,6 @@ body {
 .separador-complexo-btn.btn-zn { background-color: #ffd700 !important; } 
 .separador-complexo-btn.btn-zs { background-color: #ff33aa !important; }
 
-/* Nota: No caso da ZL (Zona Leste), como o fundo corporativo é um azul marinho muito escuro (#003399), 
-   abri uma única exceção acima para ele continuar com a fonte branca, caso contrário a leitura ficaria impossível. 
-   Os demais (Oeste, Norte e Sul) ficam 100% com a fonte preta no fundo colorido! */
-
 /* ==========================================================================
    5. CENTRO (MAPAS E TÍTULOS)
    ========================================================================== */
@@ -218,7 +214,28 @@ path.commrv:hover, path.ativo {
     flex-shrink: 0; 
 }
 
-/* 6.1 - CABEÇALHO DO IMÓVEL (PROTEÇÃO) */
+/* REMOVIDO: .vitrine-topo (Faixa Verde Dinâmica Redundante) */
+
+/* Ajuste no título da faixa para iniciar o topo da vitrine com respiro ideal */
+.titulo-vitrine-faixa { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    width: 100% !important; 
+    height: 38px !important; /* Leve aumento para dar mais imponência ao nome principal */
+    font-weight: bold !important; 
+    font-size: 0.95rem !important; /* Aumentado sutilmente para destacar o nome do residencial */
+    border-radius: 4px; 
+    text-transform: uppercase; 
+    color: #fff; 
+    margin-top: 2px; /* Garante alinhamento limpo no topo */
+    margin-bottom: 10px; 
+}
+
+.faixa-laranja { background: var(--mrv-laranja) !important; }
+.faixa-preta { background: var(--mrv-preto) !important; }
+
+/* Cabeçalho do Imóvel e Tabelas Internas */
 .sidebar-dir table:first-of-type b, 
 .sidebar-dir table:first-of-type span,
 .sidebar-dir table:first-of-type td {
@@ -227,51 +244,31 @@ path.commrv:hover, path.ativo {
 
 /* 6.2 - CAIXAS COLORIDAS (LOCALIZAÇÃO, MOBILIDADE, ETC) */
 .sidebar-dir div[style*="border-left"] {
-    font-size: 16px !important; 
-    line-height: 1.4 !important;
+    line-height: 1.3 !important;
 }
 
-.sidebar-dir div[style*="border-left"] *,
-.sidebar-dir div[style*="border-left"] span,
-.sidebar-dir div[style*="border-left"] p {
-    font-size: 16px !important;
+/* Controla o texto da descrição (tags p e span) */
+.sidebar-dir div[style*="border-left"] p,
+.sidebar-dir div[style*="border-left"] span {
+    font-size: 0.75rem !important; 
+    color: #444 !important;
+    margin: 0 !important;
 }
 
+/* Controla o título menor (tag label) */
+.sidebar-dir div[style*="border-left"] label {
+    font-size: 0.75rem !important; 
+    font-weight: bold !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+    text-transform: uppercase !important;
+}
+
+/* Controla os destaques em negrito se houver (tag strong) */
 .sidebar-dir div[style*="border-left"] strong {
-    font-size: 14px !important;
-    display: inline-block;
-    margin-bottom: 3px;
+    font-size: 0.65rem !important;
 }
-
-.vitrine-topo { 
-    background: var(--mrv-verde); 
-    color: white; 
-    padding: 8px; 
-    text-align: center; 
-    font-weight: bold; 
-    border-radius: 4px; 
-    margin-bottom: 8px; 
-    font-size: 0.85rem; 
-    text-transform: uppercase; 
-}
-
-.titulo-vitrine-faixa { 
-    display: flex !important; 
-    align-items: center !important; 
-    justify-content: center !important; 
-    width: 100% !important; 
-    height: 34px !important; 
-    font-weight: bold !important; 
-    font-size: 0.85rem !important; 
-    border-radius: 4px; 
-    text-transform: uppercase; 
-    color: #fff; 
-    margin-bottom: 8px; 
-}
-
-.faixa-laranja { background: var(--mrv-laranja) !important; }
-.faixa-preta { background: var(--mrv-preto) !important; }
-
+   
 /* ==========================================================================
    7. TABELAS DE PREÇOS (MANTIDO COMPACTO)
    ========================================================================== */
@@ -390,10 +387,16 @@ path.commrv:hover, path.ativo {
     background: #4285F4; 
     color: white !important; 
     text-decoration: none; 
-    padding: 2px 8px; 
+    padding: 0 8px !important; 
     border-radius: 4px; 
-    font-size: 0.65rem; 
+    font-size: 0.6rem !important; 
     font-weight: bold; 
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 18px !important; /* Força altura perfeitamente igual */
+    line-height: 18px !important;
+    box-sizing: border-box !important;
 }
 
 .box-complexo-full { 
@@ -470,3 +473,160 @@ path.commrv:hover, path.ativo {
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #999; }
+
+/* ==========================================================================
+   11. BLOCO DE DETALHES DO RESIDENCIAL (PADRONIZADO)
+   ========================================================================== */
+.detalhes-residencial-container {
+    width: 100%;
+    margin: 10px auto;
+    border: 1px solid var(--cinza-divisor);
+    border-radius: 4px;
+    overflow: hidden;
+    box-sizing: border-box;
+    background-color: #ffffff;
+}
+
+.detalhes-residencial-container .header-residencial {
+    background-color: var(--mrv-verde);
+    color: #ffffff;
+    text-align: center;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.detalhes-residencial-container .sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+    font-size: 0.75rem;
+    color: #555;
+}
+
+.detalhes-residencial-container .sub-header .btn-links-fnd {
+    display: flex;
+    gap: 4px;
+}
+
+.detalhes-residencial-container .sub-header .btn-links-fnd a {
+    color: white !important;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.65rem;
+}
+
+.detalhes-residencial-container .faixa-isencao {
+    background-color: #fff5f5;
+    color: var(--vermelho-mrv);
+    text-align: center;
+    padding: 6px;
+    font-size: 0.72rem;
+    font-weight: bold;
+    border-bottom: 1px solid #eee;
+}
+
+/* Grid layout que equaliza as alturas perfeitamente */
+.detalhes-residencial-container .grid-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-size: 0.75rem; /* Fonte unificada e padronizada */
+    color: #333;
+}
+
+/* Células base do grid */
+.detalhes-residencial-container .grid-cell {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* Divisores internos do grid 50/50 */
+.detalhes-residencial-container .border-right {
+    border-right: 1px solid #eee;
+}
+
+/* Label Verde padrão */
+.detalhes-residencial-container .grid-cell .label {
+    color: var(--mrv-verde);
+    font-weight: bold;
+}
+
+/* Valor em negrito */
+.detalhes-residencial-container .grid-cell .valor {
+    font-weight: bold;
+}
+
+/* Regra crucial: Ocupar a linha inteira */
+.detalhes-residencial-container .full-width {
+    grid-column: span 2;
+}
+
+/* Bloco Inferior de Preço */
+.detalhes-residencial-container .container-preco {
+    display: flex;
+    align-items: center;
+    background-color: var(--cinza-claro);
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+
+.detalhes-residencial-container .container-preco .preco-label {
+    flex: 1;
+    font-size: 0.75rem; /* Acompanha o padrão */
+    font-weight: bold;
+    color: #333;
+}
+
+.detalhes-residencial-container .container-preco .preco-botao {
+    flex: 2; 
+    background-color: var(--mrv-laranja); 
+    color: white; 
+    text-align: center; 
+    padding: 8px; 
+    font-size: 0.85rem; /* EXCEÇÃO: 1 ponto maior que os demais de 0.75rem */
+    font-weight: bold; 
+    border-radius: 4px;
+}
+
+
+
+
+/* ==========================================================================
+   12. NOTIFICAÇÃO FLUTUANTE (TOAST COPIAR)
+   ========================================================================== */
+.toast-notificacao {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background-color: var(--mrv-verde);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 113, 58, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast-notificacao.mostrar {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
